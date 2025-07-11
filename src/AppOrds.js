@@ -14,7 +14,6 @@ const GamesDatabase = () => {
   const [showPlayableGames, setShowPlayableGames] = useState(false);
 
   const ORDS_BASE_URL = "https://g1e4482f6c79339-gamersdb.adb.us-ashburn-1.oraclecloudapps.com/ords/admin/games/";
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api/games";
 
   // Apply game finder filter
   const applyGameFinder = async () => {
@@ -36,11 +35,11 @@ const GamesDatabase = () => {
       setLoading(true);
       
      
+      
+      // Real ORDS integration - uncomment when ready
       const endpoint = showPlayableGames && playersLookingToPlay.trim() 
-        // ? `${ORDS_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
-        // : `${ORDS_BASE_URL}/all`;
-        ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
-        : `${API_BASE_URL}/all`;
+        ? `${ORDS_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
+        : `${ORDS_BASE_URL}/all`;
         
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch games');
@@ -75,8 +74,7 @@ const GamesDatabase = () => {
   const addGame = async () => {
     if (newGame.game && newGame.players) {
       try {
-        // const response = await fetch(`${ORDS_BASE_URL}/all`, {
-        const response = await fetch(`${API_BASE_URL}/all`, {
+        const response = await fetch(`${ORDS_BASE_URL}/all`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -102,8 +100,7 @@ const GamesDatabase = () => {
   // Delete game
   const deleteGame = async (id) => {
     try {
-      // const response = await fetch(`${ORDS_BASE_URL}/game/${id}`, {
-      const response = await fetch(`${API_BASE_URL}/game/${id}`, {
+      const response = await fetch(`${ORDS_BASE_URL}/game/${id}`, {
         method: 'DELETE'
       });
       
@@ -120,8 +117,7 @@ const GamesDatabase = () => {
   const addGamerToGame = async (gameId, gamerName) => {
     if (gamerName.trim()) {
       try {
-        // const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
-        const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
+        const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -144,8 +140,7 @@ const GamesDatabase = () => {
   // Remove gamer from game
   const removeGamerFromGame = async (gameId, gamerName) => {
     try {
-      // const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
-      const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
+      const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -185,8 +180,6 @@ const GamesDatabase = () => {
       canPlayWithGroup = playersWhoOwnGame.length > 0;
     }
 
-
-    // Style
     return (
       <div className={`bg-white rounded-lg shadow-md p-6 border-l-4 transition-all duration-200 hover:shadow-lg ${
         showPlayableGames && canPlayWithGroup ? 'border-green-500' : 'border-blue-500'

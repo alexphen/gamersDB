@@ -13,7 +13,7 @@ const GamesDatabase = () => {
   const [editingGame, setEditingGame] = useState(null);
   const [showPlayableGames, setShowPlayableGames] = useState(false);
 
-  const ORDS_BASE_URL = "https://g1e4482f6c79339-gamersdb.adb.us-ashburn-1.oraclecloudapps.com/ords/admin/games/";
+  // Updated to use Node.js backend
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api/games";
 
   // Apply game finder filter
@@ -30,36 +30,39 @@ const GamesDatabase = () => {
     setPlayersLookingToPlay('');
     fetchGames();
   };
-  // Fetch games from ORDS
+
+  // Fetch games from Node.js backend
   const fetchGames = async () => {
     try {
       setLoading(true);
       
-     
+      // Choose endpoint based on whether we're filtering for playable games
       const endpoint = showPlayableGames && playersLookingToPlay.trim() 
-        // ? `${ORDS_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
-        // : `${ORDS_BASE_URL}/all`;
         ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
         : `${API_BASE_URL}/all`;
         
       const response = await fetch(endpoint);
-      if (!response.ok) throw new Error('Failed to fetch games');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch games');
+      }
       
       const data = await response.json();
       
-      // Transform ORDS response to match our component structure
+      // Transform Node.js response to match our component structure
       const transformedGames = data.items.map(item => ({
         id: item.rowid,
         game: item.game,
         players: item.players,
-        gamers: item.gamer_list ? item.gamer_list.split(',').map(g => g.trim()) : [],
-        owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()) : []
+        gamers: item.gamer_list ? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
+        owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
       }));
       
       setGames(transformedGames);
       setError(null);
       
     } catch (err) {
+      console.error('Fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -75,7 +78,6 @@ const GamesDatabase = () => {
   const addGame = async () => {
     if (newGame.game && newGame.players) {
       try {
-        // const response = await fetch(`${ORDS_BASE_URL}/all`, {
         const response = await fetch(`${API_BASE_URL}/all`, {
           method: 'POST',
           headers: {
@@ -88,12 +90,16 @@ const GamesDatabase = () => {
           })
         });
         
-        if (!response.ok) throw new Error('Failed to add game');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add game');
+        }
         
         setNewGame({ game: '', players: '', gamers: '' });
         fetchGames(); // Refresh the list
         
       } catch (err) {
+        console.error('Add game error:', err);
         setError(err.message);
       }
     }
@@ -102,16 +108,19 @@ const GamesDatabase = () => {
   // Delete game
   const deleteGame = async (id) => {
     try {
-      // const response = await fetch(`${ORDS_BASE_URL}/game/${id}`, {
       const response = await fetch(`${API_BASE_URL}/game/${id}`, {
         method: 'DELETE'
       });
       
-      if (!response.ok) throw new Error('Failed to delete game');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete game');
+      }
       
       fetchGames(); // Refresh the list
 
     } catch (err) {
+      console.error('Delete game error:', err);
       setError(err.message);
     }
   };
@@ -120,7 +129,6 @@ const GamesDatabase = () => {
   const addGamerToGame = async (gameId, gamerName) => {
     if (gamerName.trim()) {
       try {
-        // const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
         const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
           method: 'POST',
           headers: {
@@ -131,11 +139,15 @@ const GamesDatabase = () => {
           })
         });
         
-        if (!response.ok) throw new Error('Failed to add gamer');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add gamer');
+        }
         
         fetchGames(); // Refresh the list
         
       } catch (err) {
+        console.error('Add gamer error:', err);
         setError(err.message);
       }
     }
@@ -144,7 +156,6 @@ const GamesDatabase = () => {
   // Remove gamer from game
   const removeGamerFromGame = async (gameId, gamerName) => {
     try {
-      // const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
       const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
         method: 'DELETE',
         headers: {
@@ -155,11 +166,15 @@ const GamesDatabase = () => {
         })
       });
       
-      if (!response.ok) throw new Error('Failed to remove gamer');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove gamer');
+      }
       
       fetchGames(); // Refresh the list
     
     } catch (err) {
+      console.error('Remove gamer error:', err);
       setError(err.message);
     }
   };
@@ -185,8 +200,6 @@ const GamesDatabase = () => {
       canPlayWithGroup = playersWhoOwnGame.length > 0;
     }
 
-
-    // Style
     return (
       <div className={`bg-white rounded-lg shadow-md p-6 border-l-4 transition-all duration-200 hover:shadow-lg ${
         showPlayableGames && canPlayWithGroup ? 'border-green-500' : 'border-blue-500'
@@ -400,149 +413,4 @@ const GamesDatabase = () => {
                       <div className="flex items-end gap-2">
                         <button
                           onClick={applyGameFinder}
-                          disabled={!playersLookingToPlay.trim()}
-                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                        >
-                          <Filter size={16} />
-                          Find Games
-                        </button>
-                        {showPlayableGames && (
-                          <button
-                            onClick={clearGameFinder}
-                            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 flex items-center gap-2 transition-colors"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {showPlayableGames && playersLookingToPlay.trim() && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-md">
-                        <p className="text-sm text-green-800">
-                          <strong>Looking for games that:</strong>
-                        </p>
-                        <ul className="text-sm text-green-700 mt-1 ml-4">
-                          <li>• Support {playersLookingToPlay.split(',').filter(p => p.trim()).length} players</li>
-                          <li>• Are owned by at least one of: {playersLookingToPlay}</li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="text-sm text-gray-600 mt-4">
-                    Showing {filteredGames.length} of {games.length} games
-                  </div>
-                </div>
-
-                {/* Games Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {filteredGames.map(game => (
-                    <GameCard key={game.id} game={game} />
-                  ))}
-                </div>
-
-                {filteredGames.length === 0 && games.length === 0 && (
-                  <div className="text-center py-12">
-                    <Database size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">No games found. Add some games to get started!</p>
-                  </div>
-                )}
-
-                {filteredGames.length === 0 && games.length > 0 && (
-                  <div className="text-center py-12">
-                    <Search size={48} className="mx-auto text-gray-400 mb-4" />
-                    <p className="text-gray-500">No games found matching your criteria.</p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Add Game Tab */}
-        {activeTab === 'add' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Game</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Game Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter game name..."
-                  value={newGame.game}
-                  onChange={(e) => setNewGame({ ...newGame, game: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Players
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  placeholder="Enter max players..."
-                  value={newGame.players}
-                  onChange={(e) => setNewGame({ ...newGame, players: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Initial Gamers (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter gamer names separated by commas..."
-                  value={newGame.gamers}
-                  onChange={(e) => setNewGame({ ...newGame, gamers: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Example: Alice, Bob, Charlie
-                </p>
-              </div>
-              <button
-                onClick={addGame}
-                disabled={!newGame.game || !newGame.players}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
-              >
-                <Plus size={16} />
-                Add Game
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Summary Statistics */}
-        <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Database Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{games.length}</div>
-              <div className="text-sm text-gray-600">Total Games</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {[...new Set(games.flatMap(g => g.gamers))].length}
-              </div>
-              <div className="text-sm text-gray-600">Unique Gamers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {games.reduce((sum, g) => sum + g.gamers.length, 0)}
-              </div>
-              <div className="text-sm text-gray-600">Total Ownerships</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default GamesDatabase;
+                          disabled={!playersLookingToPlay
