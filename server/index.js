@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { getConnection } = require('./db');
-// require('dotenv').config();
+require('dotenv').config();
 
 const app = express();
 app.use(bodyParser.json());
@@ -138,3 +138,4 @@ app.get('/api/games/playable', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
