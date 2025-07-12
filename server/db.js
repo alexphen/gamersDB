@@ -1,5 +1,5 @@
 const oracledb = require('oracledb');
-require('dotenv').config();
+// require('dotenv').config();
 oracledb.initOracleClient({ libDir: 'E:\\Oracle\\instantclient_23_8' });
 // process.env.TNS_ADMIN = 'E:\\Oracle\\instantclient_23_8\\network\\admin';
 

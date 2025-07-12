@@ -138,3 +138,4 @@ app.get('/api/games/playable', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
