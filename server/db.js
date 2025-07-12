@@ -1,7 +1,7 @@
 const oracledb = require('oracledb');
 require('dotenv').config();
-
-oracledb.initOracleClient(); // May require path: { libDir: 'path_to_instant_client' }
+oracledb.initOracleClient({ libDir: 'E:\\Oracle\\instantclient_23_8' });
+// process.env.TNS_ADMIN = 'E:\\Oracle\\instantclient_23_8\\network\\admin';
 
 const poolPromise = oracledb.createPool({
   user: process.env.ORACLE_USER,
