@@ -13,7 +13,8 @@ const GamesDatabase = () => {
   const [editingGame, setEditingGame] = useState(null);
   const [showPlayableGames, setShowPlayableGames] = useState(false);
 
-  const ORDS_BASE_URL = "https://g1e4482f6c79339-gamersdb.adb.us-ashburn-1.oraclecloudapps.com/ords/admin/games/";
+  // Updated to use Node.js backend
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api/games";
 
   // Apply game finder filter
   const applyGameFinder = async () => {
@@ -29,36 +30,39 @@ const GamesDatabase = () => {
     setPlayersLookingToPlay('');
     fetchGames();
   };
-  // Fetch games from ORDS
+
+  // Fetch games from Node.js backend
   const fetchGames = async () => {
     try {
       setLoading(true);
       
-     
-      
-      // Real ORDS integration - uncomment when ready
+      // Choose endpoint based on whether we're filtering for playable games
       const endpoint = showPlayableGames && playersLookingToPlay.trim() 
-        ? `${ORDS_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
-        : `${ORDS_BASE_URL}/all`;
+        ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay)}`
+        : `${API_BASE_URL}/all`;
         
       const response = await fetch(endpoint);
-      if (!response.ok) throw new Error('Failed to fetch games');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch games');
+      }
       
       const data = await response.json();
       
-      // Transform ORDS response to match our component structure
+      // Transform Node.js response to match our component structure
       const transformedGames = data.items.map(item => ({
         id: item.rowid,
         game: item.game,
         players: item.players,
-        gamers: item.gamer_list ? item.gamer_list.split(',').map(g => g.trim()) : [],
-        owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()) : []
+        gamers: item.gamer_list ? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
+        owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
       }));
       
       setGames(transformedGames);
       setError(null);
       
     } catch (err) {
+      console.error('Fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -74,7 +78,7 @@ const GamesDatabase = () => {
   const addGame = async () => {
     if (newGame.game && newGame.players) {
       try {
-        const response = await fetch(`${ORDS_BASE_URL}/all`, {
+        const response = await fetch(`${API_BASE_URL}/all`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -86,12 +90,16 @@ const GamesDatabase = () => {
           })
         });
         
-        if (!response.ok) throw new Error('Failed to add game');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add game');
+        }
         
         setNewGame({ game: '', players: '', gamers: '' });
         fetchGames(); // Refresh the list
         
       } catch (err) {
+        console.error('Add game error:', err);
         setError(err.message);
       }
     }
@@ -100,15 +108,19 @@ const GamesDatabase = () => {
   // Delete game
   const deleteGame = async (id) => {
     try {
-      const response = await fetch(`${ORDS_BASE_URL}/game/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/game/${id}`, {
         method: 'DELETE'
       });
       
-      if (!response.ok) throw new Error('Failed to delete game');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete game');
+      }
       
       fetchGames(); // Refresh the list
 
     } catch (err) {
+      console.error('Delete game error:', err);
       setError(err.message);
     }
   };
@@ -117,7 +129,7 @@ const GamesDatabase = () => {
   const addGamerToGame = async (gameId, gamerName) => {
     if (gamerName.trim()) {
       try {
-        const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
+        const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -127,11 +139,15 @@ const GamesDatabase = () => {
           })
         });
         
-        if (!response.ok) throw new Error('Failed to add gamer');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add gamer');
+        }
         
         fetchGames(); // Refresh the list
         
       } catch (err) {
+        console.error('Add gamer error:', err);
         setError(err.message);
       }
     }
@@ -140,7 +156,7 @@ const GamesDatabase = () => {
   // Remove gamer from game
   const removeGamerFromGame = async (gameId, gamerName) => {
     try {
-      const response = await fetch(`${ORDS_BASE_URL}/game/${gameId}/gamers`, {
+      const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -150,11 +166,15 @@ const GamesDatabase = () => {
         })
       });
       
-      if (!response.ok) throw new Error('Failed to remove gamer');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove gamer');
+      }
       
       fetchGames(); // Refresh the list
     
     } catch (err) {
+      console.error('Remove gamer error:', err);
       setError(err.message);
     }
   };
