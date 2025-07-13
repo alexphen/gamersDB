@@ -129,29 +129,18 @@ class DbOps {
     const conn = await oracledb.getConnection();
     try {
         const result = await conn.execute(
-        `SELECT rowid, game, players, gamers FROM games`
+        `SELECT rowid, game, players, 
+                CASE 
+                    WHEN gamers IS NOT NULL AND gamers.COUNT > 0 THEN
+                    (SELECT LISTAGG(g.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY g.COLUMN_VALUE)
+                    FROM TABLE(gamers) g)
+                    ELSE NULL
+                END as gamer_list
+        FROM games`
         );
 
         const items = result.rows.map(row => {
-        let owners = [];
-        
-        // Handle nested table object
-        if (row[3]) {
-            // If it's an array (Oracle collection converted to JS array)
-            if (Array.isArray(row[3])) {
-            owners = row[3];
-            }
-            // If it's a string (shouldn't happen with nested tables, but just in case)
-            else if (typeof row[3] === 'string') {
-            owners = row[3].split(',').map(g => g.trim());
-            }
-            // If it's an object with some other structure
-            else {
-            console.log('Unexpected gamers format:', typeof row[3], row[3]);
-            owners = [];
-            }
-        }
-        
+        const owners = row[3]?.split(',').map(g => g.trim()) || [];
         console.log('Owners:', owners);
         const ownersInGroup = owners.filter(owner => playerList.includes(owner));
         
@@ -159,7 +148,7 @@ class DbOps {
             rowid: row[0],
             game: row[1],
             players: row[2],
-            gamer_list: owners.join(','),
+            gamer_list: row[3],
             owners_in_group: ownersInGroup.join(',')
         };
         }).filter(g => g.owners_in_group && g.players >= playerList.length);
