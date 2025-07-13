@@ -481,7 +481,7 @@ const GamesDatabase = () => {
                                     <input
                                       type="checkbox"
                                       onChange={(e) => {
-										  applyGameFinder()
+										//   applyGameFinder()
 										  if (e.target.checked) {
                                           	addPlayerToFinder(gamer);
                                         }
@@ -500,14 +500,14 @@ const GamesDatabase = () => {
                       </div>
                       
                       <div className="flex gap-2">
-                        {/* <button
+                        <button
                           onClick={applyGameFinder}
                           disabled={playersLookingToPlay.length === 0}
                           className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                         >
                           <Filter size={16} />
                           Find Games All Players Own
-                        </button> */}
+                        </button>
                         {showPlayableGames && (
                           <button
                             onClick={clearGameFinder}
