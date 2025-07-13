@@ -77,42 +77,66 @@ const GamesDatabase = () => {
   };
 
   // Fetch games from Node.js backend
-  const fetchGames = async () => {
-    try {
-      setLoading(true);
+  // Fixed fetchGames function for App.js
+const fetchGames = async () => {
+  try {
+    setLoading(true);
+    
+    // Choose endpoint based on whether we're filtering for playable games
+    const endpoint = showPlayableGames && playersLookingToPlay.length > 0
+      ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay.join(','))}`
+      : `${API_BASE_URL}/all`;
       
-      // Choose endpoint based on whether we're filtering for playable games
-      const endpoint = showPlayableGames && playersLookingToPlay.length > 0
-        ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay.join(','))}`
-        : `${API_BASE_URL}/all`;
-        
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch games');
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch games');
+    }
+    
+    const data = await response.json();
+
+    const transformedGames = data.items.map(item => {
+      // Handle both array and string formats for gamer_list
+      let gamers = [];
+      if (item.gamer_list) {
+        if (Array.isArray(item.gamer_list)) {
+          // If it's already an array, use it directly
+          gamers = item.gamer_list.map(g => g.trim()).filter(g => g);
+        } else if (typeof item.gamer_list === 'string') {
+          // If it's a string, split it
+          gamers = item.gamer_list.split(',').map(g => g.trim()).filter(g => g);
+        }
       }
-      
-      const data = await response.json();
-      
-      // Transform Node.js response to match our component structure
-      const transformedGames = data.items.map(item => ({
+
+      // Handle owners_in_group similarly
+      let ownersInGroup = [];
+      if (item.owners_in_group) {
+        if (Array.isArray(item.owners_in_group)) {
+          ownersInGroup = item.owners_in_group.map(g => g.trim()).filter(g => g);
+        } else if (typeof item.owners_in_group === 'string') {
+          ownersInGroup = item.owners_in_group.split(',').map(g => g.trim()).filter(g => g);
+        }
+      }
+
+      return {
         id: item.rowid,
         game: item.game,
         players: item.players,
-        gamers: item.gamer_list ? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
-        owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
-      }));
-      
-      setGames(transformedGames);
-      setError(null);
-      
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        gamers: gamers,
+        owners_in_group: ownersInGroup
+      };
+    });
+    
+    setGames(transformedGames);
+    setError(null);
+    
+  } catch (err) {
+    console.error('Fetch error:', err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Load games on component mount
   useEffect(() => {

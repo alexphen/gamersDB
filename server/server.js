@@ -55,7 +55,7 @@ async function init() {
         }
 
 		// Manual Call
-		DbOps.addGame("Bokura", 2, "Kyle,Alex")
+		DbOps.getAllGames()
 
     } catch (err) {
         console.log(err.message);
