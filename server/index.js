@@ -1,9 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { getConnection } = require('./db');
+const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 // Serve static files from the React app build directory
