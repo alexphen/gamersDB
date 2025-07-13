@@ -2,7 +2,7 @@
   "name": "gamers_db_server",
   "version": "0.1.0",
   "private": true,
-  "main": "index.js",
+  "main": "server.js",
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
@@ -12,8 +12,8 @@
     "sqlite3": "^5.1.7"
   },
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "engines": {
     "node": ">=16.0.0"

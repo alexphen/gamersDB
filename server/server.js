@@ -143,5 +143,27 @@ app.get('/api/games/playable', async (req, res) => {
   }
 });
 
+async function getHealthyConnection() {
+  let connection;
+  try {
+    connection = await oracledb.getConnection();
+    
+    // Test the connection
+    await connection.execute('SELECT 1 FROM DUAL');
+    
+    return connection;
+  } catch (err) {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+    throw err;
+  }
+}
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
+getHealthyConnection();
