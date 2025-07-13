@@ -13,7 +13,7 @@ class DbOps {
     const conn = await oracledb.getConnection();
     try {
       const result = await conn.execute(
-        `SELECT rowid, game, players, gamers, owners_in_group FROM games`
+        `SELECT rowid, game, players, gamers FROM games`
       );
       
       const items = result.rows.map(row => ({
