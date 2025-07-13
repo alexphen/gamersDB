@@ -1,9 +1,10 @@
 require('dotenv').config();
 
 console.log(process.env.ORACLE_USER)
-console.log(process.env.PORT)
 const express = require('express');
+console.log(process.env.PORT)
 const { getConnection } = require('./backend/db.js');
+console.log("backedn")
 
 const app = express();
 
