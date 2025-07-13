@@ -1,8 +1,9 @@
 const express = require('express');
-const oracledb = require('oracledb');
 const bodyParser = require('body-parser');
 const { initializePool } = require('./db');
+const DbOps = require('./dbOps');
 const cors = require('cors');
+const oracledb = require('oracledb');
 const path = require('path');
 require('dotenv').config();
 
@@ -15,156 +16,147 @@ app.use(express.static(path.join(__dirname, '../client/build')));
 
 const port = process.env.PORT || 3001;
 
-async function startServer() {
-  try {
-    // First, create the pool
-    await initializePool();
-    
-    // Then start your server
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
+const dbConfig = {
+	user: 'ADMIN',
+	password: 'loonSQLpassword2',
+	connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
 
-  } catch (error) {
-    console.error('Server startup failed:', error);
-    process.exit(1);
-  }
+	configDir: "/wallet"
+};
+
+// OracleDB Initialization
+async function init() {
+    try {
+		// await oracledb.createPool({
+		// 	user: 'ADMIN',
+		// 	password: 'loonSQLpassword2',
+		// 	connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
+		// });
+
+        let connection;
+        try {
+            // get connection from the pool and use it
+            connection = await oracledb.getConnection(dbConfig);
+			console.log("Successfully connected")
+        } catch (err) {
+            console.log("err1");
+            throw (err);
+        } finally {
+            if (connection) {
+                try {
+                    await connection.close(); // Put the connection back in the pool
+                } catch (err) {
+                console.log("err2");
+                    throw (err);
+                }
+            } else {
+                console.log("no connection")
+            }
+        }
+    } catch (err) {
+        console.log(err.message);
+    }
+    
+    
+    app.listen(port, () => console.log(`Listening on port ${port}`));
 }
 
-startServer();
+init();
+
+// async function startServer() {
+//   try {
+//     // First, create the pool
+//     await initializePool();
+    
+//     // Then start your server
+//     app.listen(port, () => {
+//       console.log(`Server running on port ${port}`);
+//     });
+
+//     // Test the database connection by calling getAllGames
+//     console.log('Testing database connection...');
+//     const games = await DbOps.getAllGames();
+//     console.log(`Database test successful! Found ${games.length} games:`);
+//     console.log(games);
+
+//   } catch (error) {
+//     console.error('Server startup failed:', error);
+//     process.exit(1);
+//   }
+// }
+
+// startServer();
 
 // Fetch all games
 app.get('/api/games/all', async (req, res) => {
-  const conn = await oracledb.getConnection();
   try {
-    console.log("Called all", req.body)
-    const result = await conn.execute(
-      `SELECT rowid, game, players, gamers, owners_in_group FROM games`
-    );
-    const items = result.rows.map(row => ({
-      rowid: row[0],
-      game: row[1],
-      players: row[2],
-      gamer_list: row[3],
-      owners_in_group: row[4]
-    }));
+    console.log("Called all", req.body);
+    const items = await DbOps.getAllGames();
     res.json({ items });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
   }
 });
 
 // Add a game
 app.post('/api/games/all', async (req, res) => {
-  const { game, players, gamers } = req.body;
-  const conn = await oracledb.getConnection();
   try {
-    console.log("Called add game", req.body)
-    await conn.execute(
-      `INSERT INTO games (game, players, gamers) VALUES (:game, :players, :gamers)`,
-      [game, players, gamers],
-      { autoCommit: true }
-    );
+    console.log("Called add game", req.body);
+    const { game, players, gamers } = req.body;
+    await DbOps.addGame(game, players, gamers);
     res.status(201).json({ message: 'Game added' });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
   }
 });
 
 // Delete game by ROWID
 app.delete('/api/games/game/:id', async (req, res) => {
-  const { id } = req.params;
-  const conn = await oracledb.getConnection();
   try {
-    console.log("Called delete", req.body)
-    await conn.execute(`DELETE FROM games WHERE rowid = :id`, [id], { autoCommit: true });
+    console.log("Called delete", req.body);
+    const { id } = req.params;
+    await DbOps.deleteGame(id);
     res.json({ message: 'Game deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
   }
 });
 
 // Add gamer
 app.post('/api/games/game/:id/gamers', async (req, res) => {
-  const { id } = req.params;
-  const { gamer_name } = req.body;
-  const conn = await oracledb.getConnection();
   try {
-    console.log("Called add gamer", req.body)
-    await conn.execute(
-      `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
-      [gamer_name, id],
-      { autoCommit: true }
-    );
+    console.log("Called add gamer", req.body);
+    const { id } = req.params;
+    const { gamer_name } = req.body;
+    await DbOps.addGamer(id, gamer_name);
     res.json({ message: 'Gamer added' });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
   }
 });
 
 // Remove gamer
 app.delete('/api/games/game/:id/gamers', async (req, res) => {
-  const { id } = req.params;
-  const { gamer_name } = req.body;
-  const conn = await oracledb.getConnection();
   try {
-    console.log("Called remove gamer", req.body)
-    const result = await conn.execute(
-      `SELECT gamers FROM games WHERE rowid = :id`,
-      [id]
-    );
-    const gamers = result.rows[0][0]?.split(',').map(g => g.trim()).filter(Boolean) || [];
-    const updated = gamers.filter(g => g !== gamer_name).join(',');
-    await conn.execute(
-      `UPDATE games SET gamers = :updated WHERE rowid = :id`,
-      [updated, id],
-      { autoCommit: true }
-    );
+    console.log("Called remove gamer", req.body);
+    const { id } = req.params;
+    const { gamer_name } = req.body;
+    await DbOps.removeGamer(id, gamer_name);
     res.json({ message: 'Gamer removed' });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
   }
 });
 
-// Optional: Add route for playable games
+// Get playable games
 app.get('/api/games/playable', async (req, res) => {
-  const { players } = req.query;
-  const playerList = players?.split(',').map(p => p.trim());
-  const conn = await oracledb.getConnection();
-
   try {
-    console.log("Called playable", req.body)
-    const result = await conn.execute(
-      `SELECT rowid, game, players, gamers FROM games`
-    );
-
-    const items = result.rows.map(row => {
-      const owners = row[3]?.split(',').map(g => g.trim()) || [];
-      const ownersInGroup = owners.filter(owner => playerList.includes(owner));
-      return {
-        rowid: row[0],
-        game: row[1],
-        players: row[2],
-        gamer_list: row[3],
-        owners_in_group: ownersInGroup.join(',')
-      };
-    }).filter(g => g.owners_in_group && g.players >= playerList.length);
-
+    console.log("Called playable", req.body);
+    const { players } = req.query;
+    const playerList = players?.split(',').map(p => p.trim());
+    const items = await DbOps.getPlayableGames(playerList);
     res.json({ items });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
   }
 });
-
