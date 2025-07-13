@@ -43,7 +43,6 @@ const GamesDatabase = () => {
     if (trimmedName && !playersLookingToPlay.includes(trimmedName)) {
       setPlayersLookingToPlay([...playersLookingToPlay, trimmedName]);
     }
-    setNewPlayerName('');
   };
 
   // Remove player from the game finder list
