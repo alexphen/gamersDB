@@ -475,7 +475,7 @@ const GamesDatabase = () => {
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Select Existing Players
                             </label>
-                            <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
+                            <div className="flex border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                               {getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).length > 0 ? (
                                 getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).map(gamer => (
                                   <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-900 p-1 rounded">
