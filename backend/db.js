@@ -1,7 +1,7 @@
 const oracledb = require('oracledb');
 require('dotenv').config();
 
-oracledb.initOracleClient();
+// oracledb.initOracleClient();
 console.log("oracledb")
 
 const poolPromise = oracledb.createPool({
