@@ -129,7 +129,10 @@ class DbOps {
     const conn = await oracledb.getConnection();
     try {
       const result = await conn.execute(
-        `SELECT rowid, game, players, gamers FROM games`
+        `SELECT rowid, game, players, 
+            (SELECT LISTAGG(COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY COLUMN_VALUE)
+               FROM TABLE(gamers)) as gamer_list
+        FROM games`
       );
 
       const items = result.rows.map(row => {
