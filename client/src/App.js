@@ -470,7 +470,7 @@ const GamesDatabase = () => {
                         </div>
                         
                         {/* Add Players */}
-                        <div className="grid">
+                        <div className="flex">
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Select Existing Players
