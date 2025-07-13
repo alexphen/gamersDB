@@ -15,7 +15,6 @@ app.use(express.static(path.join(__dirname, '../client/build')));
 
 const port = process.env.PORT || 3001;
 
-// In your server.js
 async function startServer() {
   try {
     // First, create the pool
@@ -25,6 +24,7 @@ async function startServer() {
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });
+
   } catch (error) {
     console.error('Server startup failed:', error);
     process.exit(1);
@@ -167,3 +167,4 @@ app.get('/api/games/playable', async (req, res) => {
     await conn.close();
   }
 });
+

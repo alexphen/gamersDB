@@ -19,7 +19,6 @@ async function initializePool() {
     throw error;
   }
 }
-
 // const poolPromise = oracledb.createPool({
 //   user: process.env.ORACLE_USER,
 //   password: process.env.ORACLE_PASSWORD,
