@@ -87,7 +87,7 @@ class DbOps {
         `INSERT INTO TABLE(
             SELECT g.gamers FROM games g WHERE rowid = :id
         ) VALUES (:gamer_name)`,
-        {id, gamerName},
+        [id, gamerName],
         { autoCommit: true }
         // `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
         // [gamerName, id],
@@ -107,23 +107,15 @@ class DbOps {
   static async removeGamer(id, gamerName) {
     const conn = await oracledb.getConnection();
     try {
-      // First, get the current gamers list
-      const result = await conn.execute(
-        `SELECT gamers FROM games WHERE rowid = :id`,
-        [id]
-      );
-      
-      const gamers = result.rows[0][0]?.split(',').map(g => g.trim()).filter(Boolean) || [];
-      const updated = gamers.filter(g => g !== gamerName).join(',');
-      
-      // Update with the filtered list
-      await conn.execute(
-        `UPDATE games SET gamers = :updated WHERE rowid = :id`,
-        [updated, id],
-        { autoCommit: true }
-      );
+        await conn.execute(
+            `DELETE FROM TABLE(
+                SELECT g.gamers FROM games g WHERE rowid = :id
+            ) WHERE COLUMN_VALUE = :gamerName`,
+            [ id, gamerName ],
+            { autoCommit: true }
+        );
     } finally {
-      await conn.close();
+        await conn.close();
     }
   }
 
