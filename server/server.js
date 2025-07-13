@@ -63,30 +63,6 @@ async function init() {
 
 init();
 
-// async function startServer() {
-//   try {
-//     // First, create the pool
-//     await initializePool();
-    
-//     // Then start your server
-//     app.listen(port, () => {
-//       console.log(`Server running on port ${port}`);
-//     });
-
-//     // Test the database connection by calling getAllGames
-//     console.log('Testing database connection...');
-//     const games = await DbOps.getAllGames();
-//     console.log(`Database test successful! Found ${games.length} games:`);
-//     console.log(games);
-
-//   } catch (error) {
-//     console.error('Server startup failed:', error);
-//     process.exit(1);
-//   }
-// }
-
-// startServer();
-
 // Fetch all games
 app.get('/api/games/all', async (req, res) => {
   try {

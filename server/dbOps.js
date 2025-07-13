@@ -40,9 +40,11 @@ class DbOps {
   static async addGame(game, players, gamers) {
     const conn = await oracledb.getConnection();
     try {
+      const gamerArray = gamers.split(',').map(name => name.trim());
       await conn.execute(
-        `INSERT INTO games (game, players, gamers) VALUES (:game, :players, :gamers)`,
-        [game, players, gamers],
+        `INSERT INTO games (game, players, gamers) 
+         VALUES (:game, :players, gamer_names_type(${gamerArray.map(() => '?').join(', ')}))`,
+        [game, players, ...gamerArray],
         { autoCommit: true }
       );
     } finally {
