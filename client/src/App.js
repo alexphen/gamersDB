@@ -98,8 +98,8 @@ const GamesDatabase = () => {
         id: item.rowid,
         game: item.game,
         players: item.players,
-        gamers: item.gamer_list ? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
-        owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
+        gamers: item.gamer_list //? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
+        // owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
       }));
       
       setGames(transformedGames);
