@@ -484,6 +484,7 @@ const GamesDatabase = () => {
 										  applyGameFinder()
 										  if (e.target.checked) {
                                           	addPlayerToFinder(gamer);
+											console.log(playersLookingToPlay)
                                         }
                                       }}
                                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
