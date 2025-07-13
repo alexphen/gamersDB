@@ -1,8 +1,8 @@
 const oracledb = require('oracledb');
-console.log("oracledb")
 require('dotenv').config();
 
 oracledb.initOracleClient();
+console.log("oracledb")
 
 const poolPromise = oracledb.createPool({
   // user: process.env.ORACLE_USER,
@@ -14,6 +14,7 @@ const poolPromise = oracledb.createPool({
   poolMax: 10,
   poolIncrement: 1
 });
+console.log("primise")
 
 module.exports = {
   getConnection: async () => {
