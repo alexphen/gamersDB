@@ -1,144 +1,85 @@
+// server/index.js - Add debugging and error handling
 const express = require('express');
-const bodyParser = require('body-parser');
-const { getConnection } = require('./db');
-require('dotenv').config();
+const path = require('path');
+const cors = require('cors');
+
+// Add error handling for require statements
+try {
+  require('dotenv').config();
+} catch (error) {
+  console.log('dotenv not available:', error.message);
+}
+
+console.log('Starting server...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('Current directory:', __dirname);
 
 const app = express();
-app.use(bodyParser.json());
 
-// Serve static files from the React app build directory
-app.use(express.static(path.join(__dirname, '../client/build')));
+// Basic middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const PORT = process.env.PORT || 3001;
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
-// Fetch all games
-app.get('/api/games/all', async (req, res) => {
-  const conn = await getConnection();
+// Check if client build exists
+const clientBuildPath = path.join(__dirname, '../client/build');
+console.log('Looking for client build at:', clientBuildPath);
+
+try {
+  // Serve static files from the React app build directory
+  app.use(express.static(clientBuildPath));
+  console.log('Static files configured successfully');
+} catch (error) {
+  console.error('Error setting up static files:', error);
+}
+
+// API routes
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+// Catch all handler: send back React's index.html file
+app.get('*', (req, res) => {
   try {
-    const result = await conn.execute(
-      `SELECT rowid, game, players, gamers, owners_in_group FROM games`
-    );
-    const items = result.rows.map(row => ({
-      rowid: row[0],
-      game: row[1],
-      players: row[2],
-      gamer_list: row[3],
-      owners_in_group: row[4]
-    }));
-    res.json({ items });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
+    const indexPath = path.join(clientBuildPath, 'index.html');
+    console.log('Serving index.html from:', indexPath);
+    res.sendFile(indexPath);
+  } catch (error) {
+    console.error('Error serving index.html:', error);
+    res.status(500).send('Error loading application');
   }
 });
 
-// Add a game
-app.post('/api/games/all', async (req, res) => {
-  const { game, players, gamers } = req.body;
-  const conn = await getConnection();
-  try {
-    await conn.execute(
-      `INSERT INTO games (game, players, gamers) VALUES (:game, :players, :gamers)`,
-      [game, players, gamers],
-      { autoCommit: true }
-    );
-    res.status(201).json({ message: 'Game added' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
+const PORT = process.env.PORT || 5000;
+
+// Add error handling for server startup
+app.listen(PORT, (error) => {
+  if (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
+  console.log(`Server is running on port ${PORT}`);
 });
 
-// Delete game by ROWID
-app.delete('/api/games/game/:id', async (req, res) => {
-  const { id } = req.params;
-  const conn = await getConnection();
-  try {
-    await conn.execute(`DELETE FROM games WHERE rowid = :id`, [id], { autoCommit: true });
-    res.json({ message: 'Game deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
-  }
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
 });
 
-// Add gamer
-app.post('/api/games/game/:id/gamers', async (req, res) => {
-  const { id } = req.params;
-  const { gamer_name } = req.body;
-  const conn = await getConnection();
-  try {
-    await conn.execute(
-      `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
-      [gamer_name, id],
-      { autoCommit: true }
-    );
-    res.json({ message: 'Gamer added' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
-  }
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
-// Remove gamer
-app.delete('/api/games/game/:id/gamers', async (req, res) => {
-  const { id } = req.params;
-  const { gamer_name } = req.body;
-  const conn = await getConnection();
-  try {
-    const result = await conn.execute(
-      `SELECT gamers FROM games WHERE rowid = :id`,
-      [id]
-    );
-    const gamers = result.rows[0][0]?.split(',').map(g => g.trim()).filter(Boolean) || [];
-    const updated = gamers.filter(g => g !== gamer_name).join(',');
-    await conn.execute(
-      `UPDATE games SET gamers = :updated WHERE rowid = :id`,
-      [updated, id],
-      { autoCommit: true }
-    );
-    res.json({ message: 'Gamer removed' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
-  }
-});
-
-// Optional: Add route for playable games
-app.get('/api/games/playable', async (req, res) => {
-  const { players } = req.query;
-  const playerList = players?.split(',').map(p => p.trim());
-  const conn = await getConnection();
-
-  try {
-    const result = await conn.execute(
-      `SELECT rowid, game, players, gamers FROM games`
-    );
-
-    const items = result.rows.map(row => {
-      const owners = row[3]?.split(',').map(g => g.trim()) || [];
-      const ownersInGroup = owners.filter(owner => playerList.includes(owner));
-      return {
-        rowid: row[0],
-        game: row[1],
-        players: row[2],
-        gamer_list: row[3],
-        owners_in_group: ownersInGroup.join(',')
-      };
-    }).filter(g => g.owners_in_group && g.players >= playerList.length);
-
-    res.json({ items });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  } finally {
-    await conn.close();
-  }
-});
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
+module.exports = app;

@@ -6,6 +6,9 @@ require('dotenv').config();
 const app = express();
 app.use(bodyParser.json());
 
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../client/build')));
+
 const PORT = process.env.PORT || 3001;
 
 // Fetch all games
