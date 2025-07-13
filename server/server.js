@@ -13,7 +13,25 @@ app.use(bodyParser.json());
 // Serve static files from the React app build directory
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-const PORT = process.env.PORT || 3001;
+const port = process.env.PORT || 3001;
+
+// In your server.js
+async function startServer() {
+  try {
+    // First, create the pool
+    await initializePool();
+    
+    // Then start your server
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Server startup failed:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 // Fetch all games
 app.get('/api/games/all', async (req, res) => {
