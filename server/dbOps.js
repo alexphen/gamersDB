@@ -108,10 +108,11 @@ class DbOps {
     const conn = await oracledb.getConnection();
     try {
         await conn.execute(
-            `DELETE FROM TABLE(
-                SELECT g.gamers FROM games g WHERE rowid = :id
-            ) WHERE COLUMN_VALUE = :gamerName`,
-            [ id, gamerName ],
+            `UPDATE games 
+            SET gamers = gamers MULTISET EXCEPT gamer_names_type(:gamerName),
+                players = GREATEST(players - 1, 0)
+            WHERE ROWID = :gameRowId`,
+            { gameRowId: id, gamerName: gamerName },
             { autoCommit: true }
         );
     } finally {

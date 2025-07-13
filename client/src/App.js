@@ -207,7 +207,8 @@ const GamesDatabase = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          gamer_name: gamerName
+          gamer_name: gamerName,
+		  gameID: gameId
         })
       });
       
