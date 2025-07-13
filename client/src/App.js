@@ -10,12 +10,8 @@ const GamesDatabase = () => {
   const [searchGamer, setSearchGamer] = useState('');
   const [playersLookingToPlay, setPlayersLookingToPlay] = useState([]);
   const [newGame, setNewGame] = useState({ game: '', players: '', gamers: '', newGamerName: '' });
-  const [editingGame, setEditingGame] = useState(null);
   const [showPlayableGames, setShowPlayableGames] = useState(false);
-  const [showGamerDropdown, setShowGamerDropdown] = useState(false);
-  const [showPlayerDropdown, setShowPlayerDropdown] = useState(false);
   const [selectedGamers, setSelectedGamers] = useState([]);
-  const [newPlayerName, setNewPlayerName] = useState('');
 
   // Updated to use Node.js backend
   const API_BASE_URL = process.env.REACT_APP_API_URL;// || "http://localhost:3001/api/games";
@@ -154,7 +150,8 @@ const GamesDatabase = () => {
   const deleteGame = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/game/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+		body: id
       });
       
       if (!response.ok) {
@@ -302,7 +299,7 @@ const GamesDatabase = () => {
                 >
                   {gamer}
                   <button
-                    onClick={() => removeGamerFromGame(game.id, gamer)}
+                    onClick={() => removeGamerFromGame(game, game.id, gamer)}
                     className="text-red-500 hover:text-red-700 ml-1 transition-colors"
                     title="Remove gamer"
                   >
@@ -345,67 +342,12 @@ const GamesDatabase = () => {
     );
   };
 
-  // Multi-select dropdown for gamers
-  const GamerMultiSelect = ({ availableGamers, selectedGamers, onAdd, onRemove, placeholder }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const availableToAdd = availableGamers.filter(gamer => !selectedGamers.includes(gamer));
-
-    return (
-      <div className="relative">
-        <div className="border border-gray-300 rounded-md p-2 min-h-[42px] cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
-          <div className="flex flex-wrap gap-1">
-            {selectedGamers.length > 0 ? (
-              selectedGamers.map(gamer => (
-                <span key={gamer} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm flex items-center gap-1">
-                  {gamer}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemove(gamer);
-                    }}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              ))
-            ) : (
-              <span className="text-gray-500">{placeholder}</span>
-            )}
-          </div>
-          <ChevronDown size={16} className="absolute right-2 top-3 text-gray-500" />
-        </div>
-        
-        {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
-            {availableToAdd.length > 0 ? (
-              availableToAdd.map(gamer => (
-                <div
-                  key={gamer}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    onAdd(gamer);
-                    setIsOpen(false);
-                  }}
-                >
-                  {gamer}
-                </div>
-              ))
-            ) : (
-              <div className="p-2 text-gray-500">No more gamers to add</div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-8 flex items-center gap-2">
           <Database size={32} />
-          Games Database Manager
+          Gamers Database Manager
         </h1>
 
         {/* Navigation Tabs */}
@@ -528,7 +470,7 @@ const GamesDatabase = () => {
                         </div>
                         
                         {/* Add Players */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid">
                           <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Select Existing Players
