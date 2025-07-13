@@ -53,6 +53,10 @@ async function init() {
                 console.log("no connection")
             }
         }
+
+		// Manual Call
+		DbOps.addGame("Bokura", 2, "Kyle,Alex")
+
     } catch (err) {
         console.log(err.message);
     }

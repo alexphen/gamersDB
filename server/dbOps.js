@@ -30,27 +30,31 @@ class DbOps {
     }
   }
 
-  /**
-   * Add a new game to the database
-   * @param {string} game - Game name
-   * @param {number} players - Number of players
-   * @param {string} gamers - Comma-separated list of gamers
-   * @returns {Promise<void>}
-   */
-  static async addGame(game, players, gamers) {
-    const conn = await oracledb.getConnection();
-    try {
-      const gamerArray = gamers.split(',').map(name => name.trim());
-      await conn.execute(
-        `INSERT INTO games (game, players, gamers) 
-         VALUES (:game, :players, gamer_names_type(${gamerArray.map(() => '?').join(', ')}))`,
-        [game, players, ...gamerArray],
-        { autoCommit: true }
-      );
-    } finally {
-      await conn.close();
+    /**
+     * Add a new game to the database
+     * @param {string} game - Game name
+     * @param {number} players - Number of players
+     * @param {string} gamers - Comma-separated list of gamers
+     * @returns {Promise<void>}
+     */
+    static async addGame(game, players, gamers) {
+        const conn = await oracledb.getConnection();
+        try {
+            const gamerArray = gamers.split(',').map(name => name.trim());
+            
+            // Build the SQL with the exact number of literal values
+            const gamerValues = gamerArray.map(gamer => `'${gamer.replace(/'/g, "''")}'`).join(', ');
+            
+            await conn.execute(
+            `INSERT INTO games (game, players, gamers) 
+            VALUES (:game, :players, gamer_names_type(${gamerValues}))`,
+            { game: game, players: players },
+            { autoCommit: true }
+            );
+        } finally {
+            await conn.close();
+        }
     }
-  }
 
   /**
    * Delete a game by ROWID
