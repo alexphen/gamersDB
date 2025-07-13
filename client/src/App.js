@@ -681,7 +681,7 @@ const GamesDatabase = () => {
                   </label>
                   <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                     {getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
-                      <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer text-white hover:bg-gray-700 p-1 rounded">
                         <input
                           type="checkbox"
                           onChange={(e) => {
@@ -703,7 +703,7 @@ const GamesDatabase = () => {
                           placeholder="Enter new gamer name..."
                           value={newGame.newGamerName}
                           onChange={(e) => setNewGame({ ...newGame, newGamerName: e.target.value })}
-                          className="flex-1 px-2 py-1 border border-gray-700 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          className="flex-1 px-2 py-1 border border-gray-700 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                           onKeyPress={(e) => {
                             if (e.key === 'Enter') {
                               addNewGamerToSelected();

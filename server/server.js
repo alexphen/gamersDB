@@ -54,9 +54,6 @@ async function init() {
             }
         }
 
-		// Manual Call
-		DbOps.getAllGames()
-
     } catch (err) {
         console.log(err.message);
     }
