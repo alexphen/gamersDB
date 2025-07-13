@@ -134,7 +134,7 @@ class DbOps {
                FROM TABLE(gamers)) as gamer_list
         FROM games`
       );
-
+      console.log(result)
       const items = result.rows.map(row => {
         const owners = row[3]?.split(',').map(g => g.trim()) || [];
         console.log(owners)
