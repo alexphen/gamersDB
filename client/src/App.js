@@ -234,7 +234,7 @@ const GamesDatabase = () => {
       const allPlayersOwnGame = playersLookingToPlay.every(player => 
         gameOwners.includes(player)
       );
-      return matchesSearch && matchesGamer && allPlayersOwnGame;
+      return matchesSearch && matchesGamer && allPlayersOwnGame && playersLookingToPlay <= game.players;
     }
     
     return matchesSearch && matchesGamer;

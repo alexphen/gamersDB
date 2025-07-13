@@ -120,39 +120,55 @@ class DbOps {
     }
   }
 
-  /**
-   * Get games that are playable by a specific group of players
-   * @param {Array<string>} playerList - Array of player names
-   * @returns {Promise<Array>} Array of playable game objects
-   */
-  static async getPlayableGames(playerList) {
+    /**
+     * Get games that are playable by a specific group of players
+     * @param {Array<string>} playerList - Array of player names
+     * @returns {Promise<Array>} Array of playable game objects
+     */
+    static async getPlayableGames(playerList) {
     const conn = await oracledb.getConnection();
     try {
-      const result = await conn.execute(
-        `SELECT rowid, game, players, 
-            (SELECT LISTAGG(COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY COLUMN_VALUE)
-               FROM TABLE(gamers)) as gamer_list
-        FROM games`
-      );
-      console.log(result)
-      const items = result.rows.map(row => {
-        const owners = row[3]?.split(',').map(g => g.trim()) || [];
-        console.log(owners)
-        const ownersInGroup = owners.filter(owner => playerList.includes(owner));
-        return {
-          rowid: row[0],
-          game: row[1],
-          players: row[2],
-          gamer_list: row[3],
-          owners_in_group: ownersInGroup.join(',')
-        };
-      }).filter(g => g.owners_in_group && g.players >= playerList.length);
+        const result = await conn.execute(
+        `SELECT rowid, game, players, gamers FROM games`
+        );
 
-      return items;
+        const items = result.rows.map(row => {
+        let owners = [];
+        
+        // Handle nested table object
+        if (row[3]) {
+            // If it's an array (Oracle collection converted to JS array)
+            if (Array.isArray(row[3])) {
+            owners = row[3];
+            }
+            // If it's a string (shouldn't happen with nested tables, but just in case)
+            else if (typeof row[3] === 'string') {
+            owners = row[3].split(',').map(g => g.trim());
+            }
+            // If it's an object with some other structure
+            else {
+            console.log('Unexpected gamers format:', typeof row[3], row[3]);
+            owners = [];
+            }
+        }
+        
+        console.log('Owners:', owners);
+        const ownersInGroup = owners.filter(owner => playerList.includes(owner));
+        
+        return {
+            rowid: row[0],
+            game: row[1],
+            players: row[2],
+            gamer_list: owners.join(','),
+            owners_in_group: ownersInGroup.join(',')
+        };
+        }).filter(g => g.owners_in_group && g.players >= playerList.length);
+
+        return items;
     } finally {
-      await conn.close();
+        await conn.close();
     }
-  }
+    }
 }
 
 module.exports = DbOps;
