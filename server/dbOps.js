@@ -133,8 +133,7 @@ class DbOps {
       );
 
       const items = result.rows.map(row => {
-        // const owners = row[3]?.split(',').map(g => g.trim()) || [];
-        const owners = row[3]
+        const owners = row[3]?.split(',').map(g => g.trim()) || [];
         console.log(owners)
         const ownersInGroup = owners.filter(owner => playerList.includes(owner));
         return {
