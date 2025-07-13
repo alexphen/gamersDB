@@ -37,6 +37,7 @@ startServer();
 app.get('/api/games/all', async (req, res) => {
   const conn = await oracledb.getConnection();
   try {
+    console.log("Called all", req.body)
     const result = await conn.execute(
       `SELECT rowid, game, players, gamers, owners_in_group FROM games`
     );
@@ -60,6 +61,7 @@ app.post('/api/games/all', async (req, res) => {
   const { game, players, gamers } = req.body;
   const conn = await oracledb.getConnection();
   try {
+    console.log("Called add game", req.body)
     await conn.execute(
       `INSERT INTO games (game, players, gamers) VALUES (:game, :players, :gamers)`,
       [game, players, gamers],
@@ -78,6 +80,7 @@ app.delete('/api/games/game/:id', async (req, res) => {
   const { id } = req.params;
   const conn = await oracledb.getConnection();
   try {
+    console.log("Called delete", req.body)
     await conn.execute(`DELETE FROM games WHERE rowid = :id`, [id], { autoCommit: true });
     res.json({ message: 'Game deleted' });
   } catch (err) {
@@ -93,6 +96,7 @@ app.post('/api/games/game/:id/gamers', async (req, res) => {
   const { gamer_name } = req.body;
   const conn = await oracledb.getConnection();
   try {
+    console.log("Called add gamer", req.body)
     await conn.execute(
       `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
       [gamer_name, id],
@@ -112,6 +116,7 @@ app.delete('/api/games/game/:id/gamers', async (req, res) => {
   const { gamer_name } = req.body;
   const conn = await oracledb.getConnection();
   try {
+    console.log("Called remove gamer", req.body)
     const result = await conn.execute(
       `SELECT gamers FROM games WHERE rowid = :id`,
       [id]
@@ -138,6 +143,7 @@ app.get('/api/games/playable', async (req, res) => {
   const conn = await oracledb.getConnection();
 
   try {
+    console.log("Called playable", req.body)
     const result = await conn.execute(
       `SELECT rowid, game, players, gamers FROM games`
     );
