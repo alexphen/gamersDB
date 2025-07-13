@@ -1,7 +1,7 @@
 const express = require('express');
 const oracledb = require('oracledb');
 const bodyParser = require('body-parser');
-const { getConnection } = require('./db');
+const { initializePool } = require('./db');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
