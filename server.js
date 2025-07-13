@@ -1,7 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { getConnection } = require('./backend/db');
+const { getConnection } = require('./backend/db.js');
 require('dotenv').config();
+
+console.log(process.env.ORACLE_USER)
+console.log(process.env.PORT)
 
 const app = express();
 app.use(bodyParser.json());
