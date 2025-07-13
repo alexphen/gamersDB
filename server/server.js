@@ -35,7 +35,7 @@ startServer();
 
 // Fetch all games
 app.get('/api/games/all', async (req, res) => {
-  const conn = await getConnection();
+  const conn = await oracledb.getConnection();
   try {
     const result = await conn.execute(
       `SELECT rowid, game, players, gamers, owners_in_group FROM games`
@@ -58,7 +58,7 @@ app.get('/api/games/all', async (req, res) => {
 // Add a game
 app.post('/api/games/all', async (req, res) => {
   const { game, players, gamers } = req.body;
-  const conn = await getConnection();
+  const conn = await oracledb.getConnection();
   try {
     await conn.execute(
       `INSERT INTO games (game, players, gamers) VALUES (:game, :players, :gamers)`,
@@ -76,7 +76,7 @@ app.post('/api/games/all', async (req, res) => {
 // Delete game by ROWID
 app.delete('/api/games/game/:id', async (req, res) => {
   const { id } = req.params;
-  const conn = await getConnection();
+  const conn = await oracledb.getConnection();
   try {
     await conn.execute(`DELETE FROM games WHERE rowid = :id`, [id], { autoCommit: true });
     res.json({ message: 'Game deleted' });
@@ -91,7 +91,7 @@ app.delete('/api/games/game/:id', async (req, res) => {
 app.post('/api/games/game/:id/gamers', async (req, res) => {
   const { id } = req.params;
   const { gamer_name } = req.body;
-  const conn = await getConnection();
+  const conn = await oracledb.getConnection();
   try {
     await conn.execute(
       `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
@@ -110,7 +110,7 @@ app.post('/api/games/game/:id/gamers', async (req, res) => {
 app.delete('/api/games/game/:id/gamers', async (req, res) => {
   const { id } = req.params;
   const { gamer_name } = req.body;
-  const conn = await getConnection();
+  const conn = await oracledb.getConnection();
   try {
     const result = await conn.execute(
       `SELECT gamers FROM games WHERE rowid = :id`,
@@ -135,7 +135,7 @@ app.delete('/api/games/game/:id/gamers', async (req, res) => {
 app.get('/api/games/playable', async (req, res) => {
   const { players } = req.query;
   const playerList = players?.split(',').map(p => p.trim());
-  const conn = await getConnection();
+  const conn = await oracledb.getConnection();
 
   try {
     const result = await conn.execute(
