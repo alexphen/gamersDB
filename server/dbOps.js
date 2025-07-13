@@ -22,8 +22,6 @@ class DbOps {
         players: row[2],
         gamer_list: row[3]
       }));
-      
-      console.log(items)
 
       return items;
     } finally {
@@ -45,6 +43,7 @@ class DbOps {
             
             // Build the SQL with the exact number of literal values
             const gamerValues = gamerArray.map(gamer => `'${gamer.replace(/'/g, "''")}'`).join(', ');
+            console.log(gamerValues)
             
             await conn.execute(
             `INSERT INTO games (game, players, gamers) 
