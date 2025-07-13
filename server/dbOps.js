@@ -84,9 +84,14 @@ class DbOps {
     const conn = await oracledb.getConnection();
     try {
       await conn.execute(
-        `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
-        [gamerName, id],
+        `INSERT INTO TABLE(
+            SELECT g.gamers FROM games g WHERE rowid = :id
+        ) VALUES (:gamer_name)`,
+        {id, gamerName},
         { autoCommit: true }
+        // `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
+        // [gamerName, id],
+        // { autoCommit: true }
       );
     } finally {
       await conn.close();
