@@ -681,7 +681,7 @@ const GamesDatabase = () => {
                   </label>
                   <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                     {getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
-                      <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer text-white hover:bg-gray-700 p-1 rounded">
+                      <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-700 p-1 rounded">
                         <input
                           type="checkbox"
                           onChange={(e) => {
@@ -691,7 +691,7 @@ const GamesDatabase = () => {
                           }}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
-                        <span className="text-sm text-gray-700">{gamer}</span>
+                        <span className="text-sm text-gray-300">{gamer}</span>
                       </label>
                     ))}
                     
