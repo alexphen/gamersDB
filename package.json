@@ -20,10 +20,17 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "cd client && npm install && cd .. && npm run build",
-    "build": "cd server && npm install && node index.js",
+    "build": "cd client && npm install && npm run build",
+    "start": "cd server && npm install && node index.js",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm install && node index.js",
+    "dev:client": "cd client && npm install && npm start",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
   "eslintConfig": {
     "extends": [
@@ -42,5 +49,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
   }
 }
