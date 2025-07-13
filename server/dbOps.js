@@ -9,42 +9,27 @@ class DbOps {
    * Fetch all games from the database
    * @returns {Promise<Array>} Array of game objects
    */
- /**
- * Fetch all games from the database
- * @returns {Promise<Array>} Array of game objects
- */
-static async getAllGames() {
-  const conn = await oracledb.getConnection();
-  try {
-    const result = await conn.execute(
-      `SELECT rowid, game, players, gamers FROM games`
-    );
-    
-    const items = result.rows.map(row => {
-      // Handle the gamers field - it could be an array or need conversion
-      let gamerList = '';
-      if (row[3]) {
-        if (Array.isArray(row[3])) {
-          gamerList = row[3].join(',');
-        } else {
-          gamerList = row[3].toString();
-        }
-      }
-
-      return {
+  static async getAllGames() {
+    const conn = await oracledb.getConnection();
+    try {
+      const result = await conn.execute(
+        `SELECT rowid, game, players, gamers FROM games`
+      );
+      
+      const items = result.rows.map(row => ({
         rowid: row[0],
         game: row[1],
         players: row[2],
-        gamer_list: gamerList
-      };
-    });
-    
-    console.log(items);
-    return items;
-  } finally {
-    await conn.close();
+        gamer_list: row[3]
+      }));
+      
+      console.log(items)
+
+      return items;
+    } finally {
+      await conn.close();
+    }
   }
-}
 
     /**
      * Add a new game to the database
@@ -139,44 +124,34 @@ static async getAllGames() {
   }
 
   /**
-     * Get games that are playable by a specific group of players
-     * @param {Array<string>} playerList - Array of player names
-     * @returns {Promise<Array>} Array of playable game objects
-     */
-    static async getPlayableGames(playerList) {
+   * Get games that are playable by a specific group of players
+   * @param {Array<string>} playerList - Array of player names
+   * @returns {Promise<Array>} Array of playable game objects
+   */
+  static async getPlayableGames(playerList) {
     const conn = await oracledb.getConnection();
     try {
-        const result = await conn.execute(
+      const result = await conn.execute(
         `SELECT rowid, game, players, gamers FROM games`
-        );
+      );
 
-        const items = result.rows.map(row => {
-        // Handle the gamers field - it could be an array or need conversion
-        let owners = [];
-        if (row[3]) {
-            if (Array.isArray(row[3])) {
-            owners = row[3];
-            } else {
-            owners = row[3].toString().split(',').map(g => g.trim());
-            }
-        }
-
+      const items = result.rows.map(row => {
+        const owners = row[3]?.split(',').map(g => g.trim()) || [];
         const ownersInGroup = owners.filter(owner => playerList.includes(owner));
-        
         return {
-            rowid: row[0],
-            game: row[1],
-            players: row[2],
-            gamer_list: owners.join(','),
-            owners_in_group: ownersInGroup.join(',')
+          rowid: row[0],
+          game: row[1],
+          players: row[2],
+          gamer_list: row[3],
+          owners_in_group: ownersInGroup.join(',')
         };
-        }).filter(g => g.owners_in_group && g.players >= playerList.length);
+      }).filter(g => g.owners_in_group && g.players >= playerList.length);
 
-        return items;
+      return items;
     } finally {
-        await conn.close();
+      await conn.close();
     }
-    }
+  }
 }
 
 module.exports = DbOps;
