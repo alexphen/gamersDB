@@ -6,19 +6,6 @@ const oracledb = require('oracledb');
 class DbOps {
     
     /**
-     * Helper function to convert Oracle nested table to JavaScript array
-     * @param {*} gamersNestedTable - Oracle nested table result
-     * @returns {Array<string>} Array of gamer names
-     */
-    parseGamersArray(gamersNestedTable) {
-        if (!gamersNestedTable || gamersNestedTable.length === 0) {
-            return [];
-        }
-        return gamersNestedTable.map(gamer => gamer.trim()).filter(gamer => gamer);
-    }
-
-
-    /**
      * Fetch all games from the database
      * @returns {Promise<Array>} Array of game objects
      */
@@ -26,22 +13,23 @@ class DbOps {
         const conn = await oracledb.getConnection();
         try {
             const result = await conn.execute(
-                `SELECT rowid, game, players, gamers from GAMES`,
-                [],
-                {
-                    outFormat: oracledb.OUT_FORMAT_OBJECT,
-                    fetchInfo: {
-                        "GAMERS": { type: oracledb.DB_TYPE_VARCHAR}
-                    }
-                }
+                `SELECT rowid, game, players, gamers from GAMES`
+                // `SELECT g.rowid, g.game, g.players, 
+                //         LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+                // FROM games g,
+                //         TABLE(g.gamers) t
+                // GROUP BY g.rowid, g.game, g.players
+                // ORDER BY g.game`
             );
             
-            return result.rows.map(row => ({
-                rowid: row.ROWID,
-                game: row.GAME,
-                players: row.PLAYERS,
-                gamer_list: this.parseGamersArray(row.GAMERS)
+            const items = result.rows.map(row => ({
+            rowid: row[0],
+            game: row[1],
+            players: row[2],
+            gamer_list: row[3]// ? row[3].split(',').map(g => g.trim()) : []
             }));
+
+            return items;
         } finally {
             await conn.close();
         }
@@ -138,67 +126,56 @@ class DbOps {
     }
   }
 
-    /**
-     * Get games that all specified players own
-     * @param {Array<string>} playersArray - Array of player names
-     * @returns {Promise<Array>} Array of games that all players own
+  /**
+     * Get games that are playable by a specific group of players
+     * @param {Array<string>} playerList - Array of player names
+     * @returns {Promise<Array>} Array of playable game objects
      */
-    async getPlayableGames(playersArray) {
-        let connection;
-        try {
-            if (!playersArray || playersArray.length === 0) {
-            throw new Error('At least one player must be specified');
-            }
+    static async getPlayableGames(playerList) {
+    const conn = await oracledb.getConnection();
+    try {
+        // Use TABLE() function to properly extract the nested table as rows
+        const result = await conn.execute(
+            `SELECT rowid, game, players, gamers from GAMES`
+        // `SELECT g.rowid, g.game, g.players, 
+        //         LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+        // FROM games g,
+        //         TABLE(g.gamers) t
+        // GROUP BY g.rowid, g.game, g.players
+        // ORDER BY g.game`
+        );
+        
+        // console.log('Raw result:', result.rows);
+        
+        const items = result.rows.map(row => {
+        // // Now gamer_list is a comma-separated string from LISTAGG
+        // // const owners = row[3] ? row[3].split(',').map(g => g.trim()) : [];
+        // const ownersInGroup = owners.filter(owner => playerList.includes(owner));
+        
+        // return {
+        //     rowid: row[0],
+        //     game: row[1],
+        //     players: row[2],
+        //     gamer_list: owners, // Return as array for consistency
+        //     owners_in_group: ownersInGroup.join(',')
+        // };
+        // }).filter(g => 
+        // g.owners_in_group && 
+        // g.players >= playerList.length &&
+        // playerList.every(player => g.gamer_list.includes(player)) // All players must own the game
+        // );
+        return {
+                rowid: row[0],
+                game: row[1],
+                players: row[2],
+                gamer_list: row[3]
+            };
+        }).filter(g => g.owners_in_group && g.players >= playerList.length);
 
-            connection = await this.getConnection();
-            
-            // Build dynamic SQL to check if all players own each game
-            const placeholders = playersArray.map((_, index) => `:player${index + 1}`).join(', ');
-            const binds = {};
-            playersArray.forEach((player, index) => {
-            binds[`player${index + 1}`] = player;
-            });
-
-            const query = `
-            SELECT ROWID, game, players, gamers
-            FROM games g
-            WHERE (
-                SELECT COUNT(*)
-                FROM TABLE(g.gamers) t
-                WHERE t.COLUMN_VALUE IN (${placeholders})
-            ) = :playerCount
-            AND players >= :playerCount
-            ORDER BY game
-            `;
-
-            binds.playerCount = playersArray.length;
-
-            const result = await connection.execute(query, binds, {
-            outFormat: oracledb.OUT_FORMAT_OBJECT,
-            fetchInfo: {
-                "GAMERS": { type: oracledb.DB_TYPE_VARCHAR }
-            }
-            });
-
-            return result.rows.map(row => ({
-            rowid: row.ROWID,
-            game: row.GAME,
-            players: row.PLAYERS,
-            gamer_list: this.parseGamersArray(row.GAMERS)
-            }));
-
-        } catch (err) {
-            console.error('Error in getPlayableGames:', err);
-            throw new Error('Failed to fetch playable games: ' + err.message);
-        } finally {
-            if (connection) {
-            try {
-                await connection.close();
-            } catch (err) {
-                console.error('Error closing connection in getPlayableGames:', err);
-            }
-            }
-        }
+        return items;
+    } finally {
+        await conn.close();
+    }
     }
 }
 
