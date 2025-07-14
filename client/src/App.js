@@ -26,28 +26,36 @@ const GamesDatabase = () => {
   const applyGameFinder = async () => {
     if (playersLookingToPlay.length > 0) {
       setShowPlayableGames(true);
-      await fetchGames();
+      await fetchGames(true, playersLookingToPlay); // Pass the current players directly
     }
   };
 
   // Clear game finder filter
-  const clearGameFinder = () => {
+  const clearGameFinder = async () => {
     setShowPlayableGames(false);
     setPlayersLookingToPlay([]);
-    fetchGames();
+    await fetchGames(false, []); // Explicitly fetch all games
   };
 
   // Add player to the game finder list
   const addPlayerToFinder = (playerName) => {
     const trimmedName = playerName.trim();
     if (trimmedName && !playersLookingToPlay.includes(trimmedName)) {
-      setPlayersLookingToPlay([...playersLookingToPlay, trimmedName]);
+      const newPlayers = [...playersLookingToPlay, trimmedName];
+      setPlayersLookingToPlay(newPlayers);
     }
   };
 
   // Remove player from the game finder list
   const removePlayerFromFinder = (playerName) => {
-    setPlayersLookingToPlay(playersLookingToPlay.filter(p => p !== playerName));
+    const updatedPlayers = playersLookingToPlay.filter(p => p !== playerName);
+    setPlayersLookingToPlay(updatedPlayers);
+    
+    // If no players left, clear the filter
+    if (updatedPlayers.length === 0) {
+      setShowPlayableGames(false);
+      fetchGames(false, []);
+    }
   };
 
   // Add gamer to selected list for new game
@@ -72,36 +80,40 @@ const GamesDatabase = () => {
   };
 
   // Fetch games from Node.js backend
-  const fetchGames = async () => {
+  const fetchGames = async (forcePlayableFilter = null, playersList = null) => {
     try {
-		setLoading(true);
-		
-		console.log(playersLookingToPlay)
-		// Choose endpoint based on whether we're filtering for playable games
-		const endpoint = showPlayableGames && playersLookingToPlay.length > 0
-		? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay.join(','))}`
-		: `${API_BASE_URL}/all`;
-		
-		const response = await fetch(endpoint);
-		
-		if (!response.ok) {
-		const errorData = await response.json();
-		throw new Error(errorData.error || 'Failed to fetch games');
-		}
-		
-		const data = await response.json();
-		console.log(data)
+      setLoading(true);
+      
+      // Determine which endpoint to use
+      const shouldShowPlayable = forcePlayableFilter !== null ? forcePlayableFilter : showPlayableGames;
+      const playersToUse = playersList !== null ? playersList : playersLookingToPlay;
+      
+      // Choose endpoint based on whether we're filtering for playable games
+      const endpoint = shouldShowPlayable && playersToUse.length > 0
+        ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersToUse.join(','))}`
+        : `${API_BASE_URL}/all`;
+      
+      console.log('Fetching from endpoint:', endpoint);
+      
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch games');
+      }
+      
+      const data = await response.json();
+      console.log('Fetch response:', data);
 
-		const transformedGames = data.items.map(item => ({
-		id: item.rowid,
-		game: item.game,
-		players: item.players,
-		gamers: item.gamer_list //? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
-		// owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
-		}));
-		
-		setGames(transformedGames);
-		setError(null);
+      const transformedGames = data.items.map(item => ({
+        id: item.rowid,
+        game: item.game,
+        players: item.players,
+        gamers: item.gamer_list
+      }));
+      
+      setGames(transformedGames);
+      setError(null);
       
     } catch (err) {
       console.error('Fetch error:', err);
@@ -139,7 +151,7 @@ const GamesDatabase = () => {
         
         setNewGame({ game: '', players: '', gamers: '', newGamerName: '' });
         setSelectedGamers([]);
-        fetchGames(); // Refresh the list
+        fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
         
       } catch (err) {
         console.error('Add game error:', err);
@@ -153,7 +165,7 @@ const GamesDatabase = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/game/${id}`, {
         method: 'DELETE',
-		body: id
+        body: id
       });
       
       if (!response.ok) {
@@ -161,7 +173,7 @@ const GamesDatabase = () => {
         throw new Error(errorData.error || 'Failed to delete game');
       }
       
-      fetchGames(); // Refresh the list
+      fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
 
     } catch (err) {
       console.error('Delete game error:', err);
@@ -188,7 +200,7 @@ const GamesDatabase = () => {
           throw new Error(errorData.error || 'Failed to add gamer');
         }
         
-        fetchGames(); // Refresh the list
+        fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
         
       } catch (err) {
         console.error('Add gamer error:', err);
@@ -207,7 +219,7 @@ const GamesDatabase = () => {
         },
         body: JSON.stringify({
           gamer_name: gamerName,
-		  gameID: gameId
+          gameID: gameId
         })
       });
       
@@ -216,7 +228,7 @@ const GamesDatabase = () => {
         throw new Error(errorData.error || 'Failed to remove gamer');
       }
       
-      fetchGames(); // Refresh the list
+      fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
     
     } catch (err) {
       console.error('Remove gamer error:', err);
@@ -230,15 +242,6 @@ const GamesDatabase = () => {
     const matchesGamer = !searchGamer || game.gamers.some(gamer => 
       gamer.toLowerCase().includes(searchGamer.toLowerCase())
     );
-    
-    // // If we're showing playable games, filter for games that ALL selected players own
-    // if (showPlayableGames && playersLookingToPlay.length > 0) {
-    //   const gameOwners = game.gamers;
-    //   const allPlayersOwnGame = playersLookingToPlay.every(player => 
-    //     gameOwners.includes(player)
-    //   );
-    //   return matchesSearch && matchesGamer && allPlayersOwnGame && playersLookingToPlay <= game.players;
-    // }
     
     return matchesSearch && matchesGamer;
   });
@@ -266,10 +269,6 @@ const GamesDatabase = () => {
                 <Users size={16} />
                 Max Players: {game.players}
               </span>
-              {/* <span className="flex items-center gap-1 text-green-600">
-                <Database size={16} />
-                Owners: {game.gamers.length}
-              </span> */}
               {showPlayableGames && canPlayWithGroup && (
                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                   ✓ All Players Own This Game
@@ -301,7 +300,7 @@ const GamesDatabase = () => {
                 >
                   {gamer}
                   <button
-                    onClick={() => removeGamerFromGame(game, game.id, gamer)}
+                    onClick={() => removeGamerFromGame(game.id, gamer)}
                     className="text-red-500 hover:text-red-700 ml-1 transition-colors"
                     title="Remove gamer"
                   >
@@ -484,9 +483,8 @@ const GamesDatabase = () => {
                                     <input
                                       type="checkbox"
                                       onChange={(e) => {
-										  applyGameFinder()
-										  if (e.target.checked) {
-                                          	addPlayerToFinder(gamer);
+                                        if (e.target.checked) {
+                                          addPlayerToFinder(gamer);
                                         }
                                       }}
                                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
@@ -521,14 +519,14 @@ const GamesDatabase = () => {
                         )}
                       </div>
                     </div>
-{/*                     
+                    
                     {showPlayableGames && playersLookingToPlay.length > 0 && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-md">
-                        <p className="text-sm text-green-800">
+                      <div className="mt-3 p-3 bg-green-900 rounded-md">
+                        <p className="text-sm text-green-200">
                           <strong>Showing games that ALL of these players own:</strong> {playersLookingToPlay.join(', ')}
                         </p>
                       </div>
-                    )} */}
+                    )}
                   </div>
                   
                   <div className="text-sm text-gray-500 mt-4">
@@ -684,29 +682,6 @@ const GamesDatabase = () => {
             </div>
           </div>
         )}
-
-        {/* Summary Statistics
-        <div className="mt-8 bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Database Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{games.length}</div>
-              <div className="text-sm text-gray-600">Total Games</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {[...new Set(games.flatMap(g => g.gamers))].length}
-              </div>
-              <div className="text-sm text-gray-600">Unique Gamers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {games.reduce((sum, g) => sum + g.gamers.length, 0)}
-              </div>
-              <div className="text-sm text-gray-600">Total Ownerships</div>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );
