@@ -89,6 +89,7 @@ const GamesDatabase = () => {
 		}
 		
 		const data = await response.json();
+		console.log(data)
 
 		const transformedGames = data.items.map(item => ({
 		id: item.rowid,
