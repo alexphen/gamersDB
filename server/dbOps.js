@@ -126,34 +126,55 @@ class DbOps {
     }
   }
 
-  /**
-     * Get games that are playable by a specific group of players
-     * @param {Array<string>} playerList - Array of player names
-     * @returns {Promise<Array>} Array of playable game objects
-     */
-    static async getPlayableGames(playerList) {
-    const conn = await oracledb.getConnection();
-    try {
-        const result = await conn.execute(
-            `SELECT rowid, game, players, gamers from GAMES`
-        );
-        
-        console.log('Raw result:', result.rows);
-        
-        const items = result.rows.map(row => {
-        return {
-                rowid: row[0],
-                game: row[1],
-                players: row[2],
-                gamer_list: row[3]
-            };
-        }).filter(g => g.owners_in_group && g.players >= playerList.length);
+	/**
+	 * Get games that are playable by a specific group of players
+	 * @param {Array<string>} playerList - Array of player names
+	 * @returns {Promise<Array>} Array of playable game objects
+	 */
+	static async getPlayableGames(playerList) {
+		const conn = await oracledb.getConnection();
+		try {
+			const result = await conn.execute(
+				`SELECT rowid, game, players, gamers from GAMES`
+			);
+			
+			console.log('Raw result:', result.rows);
+			
+			const items = result.rows.map(row => {
+				return {
+					rowid: row[0],
+					game: row[1],
+					players: row[2],
+					gamer_list: row[3]
+				};
+			}).filter(game => {
+				// Check if the game can accommodate the number of players
+				if (game.players < playerList.length) {
+					return false;
+				}
+				
+				// Convert gamer_list to array if it's a string
+				let gameOwners = [];
+				if (typeof game.gamer_list === 'string') {
+					gameOwners = game.gamer_list.split(',').map(g => g.trim()).filter(g => g);
+				} else if (Array.isArray(game.gamer_list)) {
+					gameOwners = game.gamer_list;
+				}
+				
+				// Check if ALL players in playerList own this game
+				const allPlayersOwnGame = playerList.every(player => 
+					gameOwners.includes(player.trim())
+				);
+				
+				return allPlayersOwnGame;
+			});
 
-        return items;
-    } finally {
-        await conn.close();
-    }
-    }
+			console.log('Filtered items:', items);
+			return items;
+		} finally {
+			await conn.close();
+		}
+	}
 }
 
 module.exports = DbOps;

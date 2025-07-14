@@ -89,7 +89,7 @@ const GamesDatabase = () => {
 		}
 		
 		const data = await response.json();
-		
+
 		const transformedGames = data.items.map(item => ({
 		id: item.rowid,
 		game: item.game,
@@ -229,14 +229,14 @@ const GamesDatabase = () => {
       gamer.toLowerCase().includes(searchGamer.toLowerCase())
     );
     
-    // If we're showing playable games, filter for games that ALL selected players own
-    if (showPlayableGames && playersLookingToPlay.length > 0) {
-      const gameOwners = game.gamers;
-      const allPlayersOwnGame = playersLookingToPlay.every(player => 
-        gameOwners.includes(player)
-      );
-      return matchesSearch && matchesGamer && allPlayersOwnGame && playersLookingToPlay <= game.players;
-    }
+    // // If we're showing playable games, filter for games that ALL selected players own
+    // if (showPlayableGames && playersLookingToPlay.length > 0) {
+    //   const gameOwners = game.gamers;
+    //   const allPlayersOwnGame = playersLookingToPlay.every(player => 
+    //     gameOwners.includes(player)
+    //   );
+    //   return matchesSearch && matchesGamer && allPlayersOwnGame && playersLookingToPlay <= game.players;
+    // }
     
     return matchesSearch && matchesGamer;
   });
