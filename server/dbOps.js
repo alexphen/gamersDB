@@ -168,8 +168,7 @@ class DbOps {
                 rowid: row[0],
                 game: row[1],
                 players: row[2],
-                gamer_list: row[3],
-                owners_in_group: ownersInGroup.join(',')
+                gamer_list: row[3]
             };
         }).filter(g => g.owners_in_group && g.players >= playerList.length);
 
