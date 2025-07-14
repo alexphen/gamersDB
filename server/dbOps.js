@@ -5,18 +5,29 @@ const oracledb = require('oracledb');
  */
 class DbOps {
     
-    /**
+   /**
      * Helper function to convert Oracle nested table to JavaScript array
      * @param {*} gamersNestedTable - Oracle nested table result
      * @returns {Array<string>} Array of gamer names
      */
-    parseGamersArray(gamersNestedTable) {
+    static parseGamersArray(gamersNestedTable) {
         if (!gamersNestedTable || gamersNestedTable.length === 0) {
             return [];
         }
-        return gamersNestedTable.map(gamer => gamer.trim()).filter(gamer => gamer);
+        
+        // Handle Oracle nested table structure
+        if (Array.isArray(gamersNestedTable)) {
+            return gamersNestedTable.map(gamer => {
+                // Oracle nested tables might return objects with COLUMN_VALUE property
+                if (typeof gamer === 'object' && gamer.COLUMN_VALUE) {
+                    return gamer.COLUMN_VALUE.trim();
+                }
+                return typeof gamer === 'string' ? gamer.trim() : String(gamer).trim();
+            }).filter(gamer => gamer);
+        }
+        
+        return [];
     }
-
 
     /**
      * Fetch all games from the database
@@ -29,10 +40,8 @@ class DbOps {
                 `SELECT rowid, game, players, gamers from GAMES`,
                 [],
                 {
-                    outFormat: oracledb.OUT_FORMAT_OBJECT,
-                    fetchInfo: {
-                        "GAMERS": { type: oracledb.DB_TYPE_VARCHAR}
-                    }
+                    outFormat: oracledb.OUT_FORMAT_OBJECT
+                    // Remove the fetchInfo configuration - let Oracle handle the nested table naturally
                 }
             );
             
@@ -181,10 +190,10 @@ class DbOps {
             });
 
             return result.rows.map(row => ({
-            rowid: row.ROWID,
-            game: row.GAME,
-            players: row.PLAYERS,
-            gamer_list: this.parseGamersArray(row.GAMERS)
+                rowid: row.ROWID,
+                game: row.GAME,
+                players: row.PLAYERS,
+                gamer_list: this.parseGamersArray(row.GAMERS)
             }));
 
         } catch (err) {
