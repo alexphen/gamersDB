@@ -269,11 +269,11 @@ const GamesDatabase = () => {
                 <Users size={16} />
                 Max Players: {game.players}
               </span>
-              {showPlayableGames && canPlayWithGroup && (
+              {/* {showPlayableGames && canPlayWithGroup && (
                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                   ✓ All Players Own This Game
                 </span>
-              )}
+              )} */}
             </div>
           </div>
           <button
@@ -523,7 +523,7 @@ const GamesDatabase = () => {
                     {showPlayableGames && playersLookingToPlay.length > 0 && (
                       <div className="mt-3 p-3 bg-green-900 rounded-md">
                         <p className="text-sm text-green-200">
-                          <strong>Showing games that ALL of these players own:</strong> {playersLookingToPlay.join(', ')}
+                          <strong>Showing {playersLookingToPlay.length}-player games that ALL of these players own:</strong> {playersLookingToPlay.join(', ')}
                         </p>
                       </div>
                     )}
