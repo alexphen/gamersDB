@@ -7,9 +7,11 @@ async function withConnection(callback) {
   let conn;
   try {
     conn = await oracledb.getConnection({
-      user: process.env.ORACLE_USER,
-      password: process.env.ORACLE_PASSWORD,
-      connectString: process.env.ORACLE_CONNECTION_STRING
+        user: 'ADMIN',
+        password: 'loonSQLpassword2',
+        connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
+
+        configDir: "/wallet"
     });
     return await callback(conn);
   } finally {
