@@ -1,95 +1,182 @@
-require('dotenv').config();
 const oracledb = require('oracledb');
 
-oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
+/**
+ * Database operations for the games application
+ */
+class DbOps {
+    
+    /**
+     * Fetch all games from the database
+     * @returns {Promise<Array>} Array of game objects
+     */
+    static async getAllGames() {
+        const conn = await oracledb.getConnection();
+        try {
+            const result = await conn.execute(
+                `SELECT rowid, game, players, gamers from GAMES`
+                // `SELECT g.rowid, g.game, g.players, 
+                //         LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+                // FROM games g,
+                //         TABLE(g.gamers) t
+                // GROUP BY g.rowid, g.game, g.players
+                // ORDER BY g.game`
+            );
+            
+            const items = result.rows.map(row => ({
+            rowid: row[0],
+            game: row[1],
+            players: row[2],
+            gamer_list: row[3]// ? row[3].split(',').map(g => g.trim()) : []
+            }));
 
-async function withConnection(callback) {
-  let conn;
-  try {
-    conn = await oracledb.getConnection({
-        user: 'ADMIN',
-        password: 'loonSQLpassword2',
-        connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
+            return items;
+        } finally {
+            await conn.close();
+        }
+    }
 
-        configDir: "/wallet"
-    });
-    return await callback(conn);
-  } finally {
-    if (conn) await conn.close();
+    /**
+     * Add a new game to the database
+     * @param {string} game - Game name
+     * @param {number} players - Number of players
+     * @param {string} gamers - Comma-separated list of gamers
+     * @returns {Promise<void>}
+     */
+    static async addGame(game, players, gamers) {
+        const conn = await oracledb.getConnection();
+        try {
+            const gamerArray = gamers.split(',').map(name => name.trim());
+            
+            // Build the SQL with the exact number of literal values
+            const gamerValues = gamerArray.map(gamer => `'${gamer.replace(/'/g, "''")}'`).join(', ');
+            console.log(gamerValues)
+            
+            await conn.execute(
+            `INSERT INTO games (game, players, gamers) 
+            VALUES (:game, :players, gamer_names_type(${gamerValues}))`,
+            { game: game, players: players },
+            { autoCommit: true }
+            );
+        } finally {
+            await conn.close();
+        }
+    }
+
+  /**
+   * Delete a game by ROWID
+   * @param {string} id - ROWID of the game to delete
+   * @returns {Promise<void>}
+   */
+  static async deleteGame(id) {
+    const conn = await oracledb.getConnection();
+    try {
+      await conn.execute(
+        `DELETE FROM games WHERE rowid = :id`,
+        [id],
+        { autoCommit: true }
+      );
+    } finally {
+      await conn.close();
+    }
   }
-}
 
-async function getGames() {
-  return withConnection(async (conn) => {
-    const result = await conn.execute(`
-      SELECT game, players, CAST(gamers AS gamer_names_type) AS gamers FROM games
-    `);
-    return result.rows.map(row => ({
-      id: row.GAME, // use game name as ID
-      game: row.GAME,
-      players: row.PLAYERS,
-      gamers: row.GAMERS || []
-    }));
-  });
-}
-
-async function addGame(game) {
-  return withConnection(async (conn) => {
-    const gamerArray = game.gamers || [];
-    const bindVars = {
-      game: game.game,
-      players: game.players,
-      gamers: { type: 'GAMER_NAMES_TYPE', val: gamerArray }
-    };
-
-    await conn.execute(`
-      INSERT INTO games (game, players, gamers)
-      VALUES (:game, :players, :gamers)
-    `, bindVars);
-
-    await conn.commit();
-    return { id: game.game, ...game };
-  });
-}
-
-async function deleteGame(id) {
-  return withConnection(async (conn) => {
-    const result = await conn.execute(`
-      DELETE FROM games WHERE game = :id
-    `, { id });
-    await conn.commit();
-    return result.rowsAffected > 0;
-  });
-}
-
-async function updateGame(id, { addGamer, removeGamer }) {
-  return withConnection(async (conn) => {
-    const result = await conn.execute(`
-      SELECT CAST(gamers AS gamer_names_type) AS gamers FROM games WHERE game = :id
-    `, { id });
-
-    if (result.rows.length === 0) return null;
-
-    let gamers = result.rows[0].GAMERS || [];
-
-    if (addGamer && !gamers.includes(addGamer)) {
-      gamers.push(addGamer);
+  /**
+   * Add a gamer to a specific game
+   * @param {string} id - ROWID of the game
+   * @param {string} gamerName - Name of the gamer to add
+   * @returns {Promise<void>}
+   */
+  static async addGamer(id, gamerName) {
+    const conn = await oracledb.getConnection();
+    try {
+      await conn.execute(
+        `INSERT INTO TABLE(
+            SELECT g.gamers FROM games g WHERE rowid = :id
+        ) VALUES (:gamer_name)`,
+        [id, gamerName],
+        { autoCommit: true }
+        // `UPDATE games SET gamers = COALESCE(gamers, '') || ',' || :gamer_name WHERE rowid = :id`,
+        // [gamerName, id],
+        // { autoCommit: true }
+      );
+    } finally {
+      await conn.close();
     }
+  }
 
-    if (removeGamer) {
-      gamers = gamers.filter(g => g !== removeGamer);
+  /**
+   * Remove a gamer from a specific game
+   * @param {string} id - ROWID of the game
+   * @param {string} gamerName - Name of the gamer to remove
+   * @returns {Promise<void>}
+   */
+  static async removeGamer(id, gamerName) {
+    const conn = await oracledb.getConnection();
+    try {
+        await conn.execute(
+            `UPDATE games 
+            SET gamers = gamers MULTISET EXCEPT gamer_names_type(:gamerName),
+                players = GREATEST(players - 1, 0)
+            WHERE ROWID = :gameRowId`,
+            { gameRowId: id, gamerName: gamerName },
+            { autoCommit: true }
+        );
+    } finally {
+        await conn.close();
     }
+  }
 
-    await conn.execute(`
-      UPDATE games SET gamers = :gamers WHERE game = :id
-    `, {
-      id,
-      gamers: { type: 'GAMER_NAMES_TYPE', val: gamers }
-    });
+  /**
+     * Get games that are playable by a specific group of players
+     * @param {Array<string>} playerList - Array of player names
+     * @returns {Promise<Array>} Array of playable game objects
+     */
+    static async getPlayableGames(playerList) {
+    const conn = await oracledb.getConnection();
+    try {
+        // Use TABLE() function to properly extract the nested table as rows
+        const result = await conn.execute(
+            `SELECT rowid, game, players, gamers from GAMES`
+        // `SELECT g.rowid, g.game, g.players, 
+        //         LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+        // FROM games g,
+        //         TABLE(g.gamers) t
+        // GROUP BY g.rowid, g.game, g.players
+        // ORDER BY g.game`
+        );
+        
+        // console.log('Raw result:', result.rows);
+        
+        const items = result.rows.map(row => {
+        // // Now gamer_list is a comma-separated string from LISTAGG
+        // // const owners = row[3] ? row[3].split(',').map(g => g.trim()) : [];
+        // const ownersInGroup = owners.filter(owner => playerList.includes(owner));
+        
+        // return {
+        //     rowid: row[0],
+        //     game: row[1],
+        //     players: row[2],
+        //     gamer_list: owners, // Return as array for consistency
+        //     owners_in_group: ownersInGroup.join(',')
+        // };
+        // }).filter(g => 
+        // g.owners_in_group && 
+        // g.players >= playerList.length &&
+        // playerList.every(player => g.gamer_list.includes(player)) // All players must own the game
+        // );
+        return {
+                rowid: row[0],
+                game: row[1],
+                players: row[2],
+                gamer_list: row[3]
+            };
+        }).filter(g => g.owners_in_group && g.players >= playerList.length);
 
-    await conn.commit();
-    return { id, game: id, players: null, gamers }; // players: null for now, or refetch
-  });
+        return items;
+    } finally {
+        await conn.close();
+    }
+    }
 }
 
-module.exports = { getGames, addGame, deleteGame, updateGame };
+module.exports = DbOps;
