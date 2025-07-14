@@ -179,8 +179,6 @@ class DbOps {
                 `SELECT rowid, game, players, gamers FROM games ORDER BY game`
             );
             
-            console.log('Raw result:', result.rows);
-            
             const items = result.rows.map(row => {
                 const gameOwners = row[3] ? row[3].split(',').map(g => g.trim()).filter(g => g) : [];
                 
