@@ -76,7 +76,6 @@ const GamesDatabase = () => {
     try {
 		setLoading(true);
 		
-		console.log(playersLookingToPlay)
 		// Choose endpoint based on whether we're filtering for playable games
 		const endpoint = showPlayableGames && playersLookingToPlay.length > 0
 		? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay.join(','))}`
@@ -90,7 +89,7 @@ const GamesDatabase = () => {
 		}
 		
 		const data = await response.json();
-		console.log(data)
+		
 		const transformedGames = data.items.map(item => ({
 		id: item.rowid,
 		game: item.game,
