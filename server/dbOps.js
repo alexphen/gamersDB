@@ -120,59 +120,37 @@ class DbOps {
     }
   }
 
-    /**
-     * Get games that are playable by a specific group of players
-     * @param {Array<string>} playerList - Array of player names
-     * @returns {Promise<Array>} Array of playable game objects
-     */
-    static async getPlayableGames(playerList) {
+  /**
+   * Get games that are playable by a specific group of players
+   * @param {Array<string>} playerList - Array of player names
+   * @returns {Promise<Array>} Array of playable game objects
+   */
+  static async getPlayableGames(playerList) {
     const conn = await oracledb.getConnection();
     try {
         const result = await conn.execute(
-        `SELECT rowid, game, players, gamers FROM games`
+            `SELECT rowid, game, players, 
+                (SELECT LISTAGG(COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY COLUMN_VALUE)
+                    FROM TABLE(gamers)) as gamer_list
+            FROM games`
         );
-
-        console.log('First row structure:');
-        if (result.rows.length > 0) {
-        console.log('Row[3] type:', typeof result.rows[0][3]);
-        console.log('Row[3] value:', result.rows[0][3]);
-        console.log('Row[3] constructor:', result.rows[0][3]?.constructor?.name);
-        }
-
         const items = result.rows.map(row => {
-        // Debug the nested table structure
-        console.log('Processing row[3]:', row[3]);
-        
-        let owners = [];
-        if (row[3]) {
-            // Handle different possible formats
-            if (Array.isArray(row[3])) {
-            owners = row[3];
-            } else if (typeof row[3] === 'string') {
-            owners = row[3].split(',').map(g => g.trim());
-            } else {
-            // Try to convert to string first
-            owners = String(row[3]).split(',').map(g => g.trim());
-            }
-        }
-        
-        console.log('Processed owners:', owners);
-        const ownersInGroup = owners.filter(owner => playerList.includes(owner));
-        
-        return {
-            rowid: row[0],
-            game: row[1],
-            players: row[2],
-            gamer_list: owners.join(','),
-            owners_in_group: ownersInGroup.join(',')
-        };
+            const owners = row[3]?.split(',').map(g => g.trim()) || [];
+            const ownersInGroup = owners.filter(owner => playerList.includes(owner));
+            return {
+                rowid: row[0],
+                game: row[1],
+                players: row[2],
+                gamer_list: row[3],
+                owners_in_group: ownersInGroup.join(',')
+            };
         }).filter(g => g.owners_in_group && g.players >= playerList.length);
 
         return items;
     } finally {
-        await conn.close();
+      await conn.close();
     }
-    }
+  }
 }
 
 module.exports = DbOps;
