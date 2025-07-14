@@ -136,7 +136,7 @@ class DbOps {
             `SELECT rowid, game, players, 
                     (SELECT LISTAGG(COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY COLUMN_VALUE)
                     FROM TABLE(gamers)) as gamer_list
-            FROM games;`
+            FROM games`
         );
         console.log(result)
         
