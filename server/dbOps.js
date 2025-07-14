@@ -138,7 +138,7 @@ class DbOps {
 				`SELECT rowid, game, players, gamers from GAMES`
 			);
 			
-			console.log('Raw result:', result.rows);
+			// console.log('Raw result:', result.rows);
 			
 			const items = result.rows.map(row => {
 				return {
@@ -159,7 +159,10 @@ class DbOps {
 					gameOwners = game.gamer_list.split(',').map(g => g.trim()).filter(g => g);
 				} else if (Array.isArray(game.gamer_list)) {
 					gameOwners = game.gamer_list;
+				} else {
+					console.log("Could not handle gamers")
 				}
+
 				
 				// Check if ALL players in playerList own this game
 				const allPlayersOwnGame = playerList.every(player => 
