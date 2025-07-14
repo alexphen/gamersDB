@@ -264,10 +264,10 @@ const GamesDatabase = () => {
                 <Users size={16} />
                 Max Players: {game.players}
               </span>
-              <span className="flex items-center gap-1 text-green-600">
+              {/* <span className="flex items-center gap-1 text-green-600">
                 <Database size={16} />
                 Owners: {game.gamers.length}
-              </span>
+              </span> */}
               {showPlayableGames && canPlayWithGroup && (
                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                   ✓ All Players Own This Game
