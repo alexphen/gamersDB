@@ -74,32 +74,33 @@ const GamesDatabase = () => {
   // Fetch games from Node.js backend
   const fetchGames = async () => {
     try {
-      setLoading(true);
-      
-      // Choose endpoint based on whether we're filtering for playable games
-      const endpoint = showPlayableGames && playersLookingToPlay.length > 0
-        ? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay.join(','))}`
-        : `${API_BASE_URL}/all`;
-        
-      const response = await fetch(endpoint);
-	  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch games');
-      }
-      
-      const data = await response.json();
+		setLoading(true);
+		
+		console.log(playersLookingToPlay)
+		// Choose endpoint based on whether we're filtering for playable games
+		const endpoint = showPlayableGames && playersLookingToPlay.length > 0
+		? `${API_BASE_URL}/playable?players=${encodeURIComponent(playersLookingToPlay.join(','))}`
+		: `${API_BASE_URL}/all`;
+		
+		const response = await fetch(endpoint);
+		
+		if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.error || 'Failed to fetch games');
+		}
+		
+		const data = await response.json();
 		console.log(data)
-      const transformedGames = data.items.map(item => ({
-        id: item.rowid,
-        game: item.game,
-        players: item.players,
-        gamers: item.gamer_list //? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
-        // owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
-      }));
-      
-      setGames(transformedGames);
-      setError(null);
+		const transformedGames = data.items.map(item => ({
+		id: item.rowid,
+		game: item.game,
+		players: item.players,
+		gamers: item.gamer_list //? item.gamer_list.split(',').map(g => g.trim()).filter(g => g) : [],
+		// owners_in_group: item.owners_in_group ? item.owners_in_group.split(',').map(g => g.trim()).filter(g => g) : []
+		}));
+		
+		setGames(transformedGames);
+		setError(null);
       
     } catch (err) {
       console.error('Fetch error:', err);
@@ -482,7 +483,7 @@ const GamesDatabase = () => {
                                     <input
                                       type="checkbox"
                                       onChange={(e) => {
-										//   applyGameFinder()
+										  applyGameFinder()
 										  if (e.target.checked) {
                                           	addPlayerToFinder(gamer);
                                         }
