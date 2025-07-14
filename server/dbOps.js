@@ -129,26 +129,41 @@ class DbOps {
     const conn = await oracledb.getConnection();
     try {
         const result = await conn.execute(
-        `SELECT rowid, game, players, 
-                CASE 
-                    WHEN gamers IS NOT NULL AND gamers.COUNT > 0 THEN
-                    (SELECT LISTAGG(g.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY g.COLUMN_VALUE)
-                    FROM TABLE(gamers) g)
-                    ELSE NULL
-                END as gamer_list
-        FROM games`
+        `SELECT rowid, game, players, gamers FROM games`
         );
 
+        console.log('First row structure:');
+        if (result.rows.length > 0) {
+        console.log('Row[3] type:', typeof result.rows[0][3]);
+        console.log('Row[3] value:', result.rows[0][3]);
+        console.log('Row[3] constructor:', result.rows[0][3]?.constructor?.name);
+        }
+
         const items = result.rows.map(row => {
-        const owners = row[3]?.split(',').map(g => g.trim()) || [];
-        console.log('Owners:', owners);
+        // Debug the nested table structure
+        console.log('Processing row[3]:', row[3]);
+        
+        let owners = [];
+        if (row[3]) {
+            // Handle different possible formats
+            if (Array.isArray(row[3])) {
+            owners = row[3];
+            } else if (typeof row[3] === 'string') {
+            owners = row[3].split(',').map(g => g.trim());
+            } else {
+            // Try to convert to string first
+            owners = String(row[3]).split(',').map(g => g.trim());
+            }
+        }
+        
+        console.log('Processed owners:', owners);
         const ownersInGroup = owners.filter(owner => playerList.includes(owner));
         
         return {
             rowid: row[0],
             game: row[1],
             players: row[2],
-            gamer_list: row[3],
+            gamer_list: owners.join(','),
             owners_in_group: ownersInGroup.join(',')
         };
         }).filter(g => g.owners_in_group && g.players >= playerList.length);
