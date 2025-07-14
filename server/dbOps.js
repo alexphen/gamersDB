@@ -10,28 +10,29 @@ class DbOps {
      * @returns {Promise<Array>} Array of game objects
      */
     static async getAllGames() {
-    const conn = await oracledb.getConnection();
-    try {
-        const result = await conn.execute(
-        `SELECT g.rowid, g.game, g.players, 
-                LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
-        FROM games g,
-                TABLE(g.gamers) t
-        GROUP BY g.rowid, g.game, g.players
-        ORDER BY g.game`
-        );
-        
-        const items = result.rows.map(row => ({
-        rowid: row[0],
-        game: row[1],
-        players: row[2],
-        gamer_list: row[3] ? row[3].split(',').map(g => g.trim()) : []
-        }));
+        const conn = await oracledb.getConnection();
+        try {
+            const result = await conn.execute(
+                `SELECT rowid, game, players, gamers from GAMES`
+                // `SELECT g.rowid, g.game, g.players, 
+                //         LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+                // FROM games g,
+                //         TABLE(g.gamers) t
+                // GROUP BY g.rowid, g.game, g.players
+                // ORDER BY g.game`
+            );
+            
+            const items = result.rows.map(row => ({
+            rowid: row[0],
+            game: row[1],
+            players: row[2],
+            gamer_list: row[3] ? row[3].split(',').map(g => g.trim()) : []
+            }));
 
-        return items;
-    } finally {
-        await conn.close();
-    }
+            return items;
+        } finally {
+            await conn.close();
+        }
     }
 
     /**
@@ -135,33 +136,42 @@ class DbOps {
     try {
         // Use TABLE() function to properly extract the nested table as rows
         const result = await conn.execute(
-        `SELECT g.rowid, g.game, g.players, 
-                LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
-        FROM games g,
-                TABLE(g.gamers) t
-        GROUP BY g.rowid, g.game, g.players
-        ORDER BY g.game`
+            `SELECT rowid, game, players, gamers from GAMES`
+        // `SELECT g.rowid, g.game, g.players, 
+        //         LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+        // FROM games g,
+        //         TABLE(g.gamers) t
+        // GROUP BY g.rowid, g.game, g.players
+        // ORDER BY g.game`
         );
         
-        console.log('Raw result:', result.rows);
+        // console.log('Raw result:', result.rows);
         
         const items = result.rows.map(row => {
-        // Now gamer_list is a comma-separated string from LISTAGG
-        const owners = row[3] ? row[3].split(',').map(g => g.trim()) : [];
-        const ownersInGroup = owners.filter(owner => playerList.includes(owner));
+        // // Now gamer_list is a comma-separated string from LISTAGG
+        // // const owners = row[3] ? row[3].split(',').map(g => g.trim()) : [];
+        // const ownersInGroup = owners.filter(owner => playerList.includes(owner));
         
+        // return {
+        //     rowid: row[0],
+        //     game: row[1],
+        //     players: row[2],
+        //     gamer_list: owners, // Return as array for consistency
+        //     owners_in_group: ownersInGroup.join(',')
+        // };
+        // }).filter(g => 
+        // g.owners_in_group && 
+        // g.players >= playerList.length &&
+        // playerList.every(player => g.gamer_list.includes(player)) // All players must own the game
+        // );
         return {
-            rowid: row[0],
-            game: row[1],
-            players: row[2],
-            gamer_list: owners, // Return as array for consistency
-            owners_in_group: ownersInGroup.join(',')
-        };
-        }).filter(g => 
-        g.owners_in_group && 
-        g.players >= playerList.length &&
-        playerList.every(player => g.gamer_list.includes(player)) // All players must own the game
-        );
+                rowid: row[0],
+                game: row[1],
+                players: row[2],
+                gamer_list: row[3],
+                owners_in_group: ownersInGroup.join(',')
+            };
+        }).filter(g => g.owners_in_group && g.players >= playerList.length);
 
         return items;
     } finally {
