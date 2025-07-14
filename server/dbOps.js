@@ -135,12 +135,13 @@ class DbOps {
 		const conn = await oracledb.getConnection();
 		try {
 			const result = await conn.execute(
-				`SELECT rowid, game, players, gamers from GAMES`
+				`SELECT game, players, CAST(gamers AS gamer_names_type) AS gamer_list FROM games;`
 			);
 			
 			// console.log('Raw result:', result.rows);
 			
 			const items = result.rows.map(row => {
+				console.log("RAW gamers:", row.GAMER_LIST);
 				return {
 					rowid: row[0],
 					game: row[1],
