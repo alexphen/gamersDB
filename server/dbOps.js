@@ -26,7 +26,7 @@ class DbOps {
             rowid: row[0],
             game: row[1],
             players: row[2],
-            gamer_list: row[3] ? row[3].split(',').map(g => g.trim()) : []
+            gamer_list: row[3]// ? row[3].split(',').map(g => g.trim()) : []
             }));
 
             return items;
