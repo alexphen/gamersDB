@@ -128,11 +128,11 @@ app.delete('/api/games/game/:id/gamers', async (req, res) => {
 // Get playable games
 app.get('/api/games/playable', async (req, res) => {
   try {
-    console.log("Called playable");
-    const { players } = req.query;
-    const playerList = players?.split(',').map(p => p.trim());
-    const items = await DbOps.getPlayableGames(playerList);
-    res.json({ items });
+		const { players } = req.query;
+		const playerList = players?.split(',').map(p => p.trim());
+		console.log("Called playable", playerList);
+		const items = await DbOps.getPlayableGames(playerList);
+		res.json({ items });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
