@@ -141,12 +141,13 @@ class DbOps {
 			console.log('Raw result:', result.rows);
 			
 			const items = result.rows.map(row => {
-				console.log("row 3:", row[3]);
+				console.log("row", row)
+				console.log("row 3:", row[3][0]);
 				return {
 					rowid: row[0],
 					game: row[1],
 					players: row[2],
-					gamer_list: row[3]
+					gamer_list: row[3][0]
 				};
 			}).filter(game => {
 				// Check if the game can accommodate the number of players
