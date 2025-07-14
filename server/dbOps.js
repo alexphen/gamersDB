@@ -4,30 +4,35 @@ const oracledb = require('oracledb');
  * Database operations for the games application
  */
 class DbOps {
-  
-  /**
-   * Fetch all games from the database
-   * @returns {Promise<Array>} Array of game objects
-   */
-  static async getAllGames() {
+    
+    /**
+     * Fetch all games from the database
+     * @returns {Promise<Array>} Array of game objects
+     */
+    static async getAllGames() {
     const conn = await oracledb.getConnection();
     try {
-      const result = await conn.execute(
-        `SELECT rowid, game, players, gamers FROM games`
-      );
-      
-      const items = result.rows.map(row => ({
+        const result = await conn.execute(
+        `SELECT g.rowid, g.game, g.players, 
+                LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+        FROM games g,
+                TABLE(g.gamers) t
+        GROUP BY g.rowid, g.game, g.players
+        ORDER BY g.game`
+        );
+        
+        const items = result.rows.map(row => ({
         rowid: row[0],
         game: row[1],
         players: row[2],
-        gamer_list: row[3]
-      }));
+        gamer_list: row[3] ? row[3].split(',').map(g => g.trim()) : []
+        }));
 
-      return items;
+        return items;
     } finally {
-      await conn.close();
+        await conn.close();
     }
-  }
+    }
 
     /**
      * Add a new game to the database
@@ -121,42 +126,48 @@ class DbOps {
   }
 
   /**
-   * Get games that are playable by a specific group of players
-   * @param {Array<string>} playerList - Array of player names
-   * @returns {Promise<Array>} Array of playable game objects
-   */
-  static async getPlayableGames(playerList) {
+     * Get games that are playable by a specific group of players
+     * @param {Array<string>} playerList - Array of player names
+     * @returns {Promise<Array>} Array of playable game objects
+     */
+    static async getPlayableGames(playerList) {
     const conn = await oracledb.getConnection();
     try {
+        // Use TABLE() function to properly extract the nested table as rows
         const result = await conn.execute(
-            `SELECT rowid, game, players, gamers FROM games`
+        `SELECT g.rowid, g.game, g.players, 
+                LISTAGG(t.COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY t.COLUMN_VALUE) as gamer_list
+        FROM games g,
+                TABLE(g.gamers) t
+        GROUP BY g.rowid, g.game, g.players
+        ORDER BY g.game`
         );
-        console.log(result)
-        result = await conn.execute(
-            `SELECT rowid, game, players, 
-                    (SELECT LISTAGG(COLUMN_VALUE, ',') WITHIN GROUP (ORDER BY COLUMN_VALUE)
-                    FROM TABLE(gamers)) as gamer_list
-            FROM games`
-        );
-        console.log(result)
+        
+        console.log('Raw result:', result.rows);
         
         const items = result.rows.map(row => {
-            const owners = row[3]?.split(',').map(g => g.trim()) || [];
-            const ownersInGroup = owners.filter(owner => playerList.includes(owner));
-            return {
-                rowid: row[0],
-                game: row[1],
-                players: row[2],
-                gamer_list: row[3],
-                owners_in_group: ownersInGroup.join(',')
-            };
-        }).filter(g => g.owners_in_group && g.players >= playerList.length);
+        // Now gamer_list is a comma-separated string from LISTAGG
+        const owners = row[3] ? row[3].split(',').map(g => g.trim()) : [];
+        const ownersInGroup = owners.filter(owner => playerList.includes(owner));
+        
+        return {
+            rowid: row[0],
+            game: row[1],
+            players: row[2],
+            gamer_list: owners, // Return as array for consistency
+            owners_in_group: ownersInGroup.join(',')
+        };
+        }).filter(g => 
+        g.owners_in_group && 
+        g.players >= playerList.length &&
+        playerList.every(player => g.gamer_list.includes(player)) // All players must own the game
+        );
 
         return items;
     } finally {
-      await conn.close();
+        await conn.close();
     }
-  }
+    }
 }
 
 module.exports = DbOps;
