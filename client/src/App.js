@@ -927,7 +927,7 @@ const GamesDatabase = () => {
 									</div>
 									{/* Add New Gamer as last entry */}
 									<div className="flex items-center space-x-2 mb-2 p-1 rounded">
-										<div className="flex gap-2 flex-1">
+										<div className="flex gap-2">
 											<input
 												type="text"
 												placeholder="Enter new gamer name..."
