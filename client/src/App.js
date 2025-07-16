@@ -172,7 +172,7 @@ const GamesDatabase = () => {
 	};
 
 	// Delete game
-	const deleteGame = async (id) => {
+	const deleteGame = async (id, game) => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/game/${id}`, {
 				method: 'DELETE',
@@ -439,7 +439,7 @@ const GamesDatabase = () => {
 							<Edit size={18} />
 						</button>
 						<button
-							onClick={() => deleteGame(game.id)}
+							onClick={() => deleteGame(game.id, game.game)}
 							className="text-red-500 hover:text-red-700 p-1 transition-colors"
 							title="Delete game"
 						>
