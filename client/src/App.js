@@ -443,9 +443,11 @@ const GamesDatabase = () => {
 					</div>
 				</div>
 
-				{/* Game Owners section remains the same */}
 				<div className="mb-4">
-					<h4 className="font-semibold text-gray-300 mb-2">Game Owners:</h4>
+					{game.remotePlay
+						? <h4 className="font-semibold text-gray-300 mb-2">Hosts:</h4>
+						: <h4 className="font-semibold text-gray-300 mb-2">Game Owners:</h4>
+					}
 					<div className="flex flex-wrap gap-2">
 						{game.gamers.length > 0 ? (
 							game.gamers.map((gamer, index) => (
