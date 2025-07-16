@@ -680,20 +680,12 @@ const GamesDatabase = () => {
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                               Select Existing Players
                             </label>
-                            <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
+                            <div className="flex flex-wrap gap-2 border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                               {getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).length > 0 ? (
                                 getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).map(gamer => (
-                                  <label key={gamer} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors">
-                                  <UserPlus size={16} />
-                                    <input
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          addPlayerToFinder(gamer);
-                                        }
-                                      }}
-                                      className="h-4 w-4 focus:ring-green-500 border-gray-300 rounded"
-                                    />
-                                    <span className="text-sm text-gray-300">{gamer}</span>
+                                  <label key={gamer} onClick={addPlayerToFinder(gamer)} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800">
+                                    <UserPlus size={16} />
+                                    <span className="text-sm">{gamer}</span>
                                   </label>
                                 ))
                               ) : (
