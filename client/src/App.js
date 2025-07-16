@@ -364,7 +364,7 @@ const GamesDatabase = () => {
 									onChange={(e) => setEditedGame({ ...editedGame, game: e.target.value })}
 									className="text-xl font-bold bg-gray-700 text-white px-2 py-1 rounded w-full"
 								/>
-								<div className="flex gap-2"> 
+								<div className="flex gap-2 items-center"> 
 									<input
 										type="number"
 										min="1"
@@ -375,14 +375,14 @@ const GamesDatabase = () => {
 									/>
 									<input
 										type='checkbox'
-										value={editedGame.remotePlay}
+										checked={editedGame.remotePlay}
 										onChange={(e) => setEditedGame({...editedGame, remotePlay: e.target.checked})}
 										className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
 									/>
 									<span className="text-sm text-gray-300">Remote Play</span>
 									<input
 										type='checkbox'
-										value={editedGame.fullPartyOnly}
+										checked={editedGame.fullPartyOnly}
 										onChange={(e) => setEditedGame({...editedGame, fullPartyOnly: e.target.checked})}
 										className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
 									/>
@@ -412,12 +412,12 @@ const GamesDatabase = () => {
 										Max Players: {game.players}
 									</span>
 									{game.remotePlay && (
-										<span className="bg-purple-300 text-purple-800 px-2 py-1 rounded-full text-sm">
+										<span className="bg-purple-300 text-purple-800 text-center px-2 py-1 rounded-full text-sm">
 											Remote Play
 										</span>
 									)}
 									{game.fullPartyOnly && (
-										<span className="bg-orange-200 text-orange-800 px-2 py-1 rounded-full text-sm">
+										<span className="bg-orange-200 text-orange-800 text-center px-2 py-1 rounded-full text-sm">
 											Full Party Only
 										</span>
 									)}
