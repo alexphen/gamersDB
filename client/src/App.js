@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Users, Trash2, UserPlus, UserMinus, Database, Eye, Filter, AlertCircle, X, ChevronDown } from 'lucide-react';
+import { Plus, Search, Users, Trash2, UserPlus, UserMinus, Database, Eye, Filter, AlertCircle, X, ChevronDown, Edit, Shuffle } from 'lucide-react';
 
 const GamesDatabase = () => {
   const [games, setGames] = useState([]);
@@ -9,11 +9,11 @@ const GamesDatabase = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchGamer, setSearchGamer] = useState('');
   const [playersLookingToPlay, setPlayersLookingToPlay] = useState([]);
-  const [newGame, setNewGame] = useState({ game: '', players: '', gamers: '', newGamerName: '' });
+  const [newGame, setNewGame] = useState({ game: '', players: '', gamers: '', newGamerName: '', fullPartyOnly: false, remotePlay: false });
   const [showPlayableGames, setShowPlayableGames] = useState(false);
   const [selectedGamers, setSelectedGamers] = useState([]);
+  const [randomGame, setRandomGame] = useState(null);
 
-  // Updated to use Node.js backend
   const API_BASE_URL = process.env.REACT_APP_API_URL;// || "http://localhost:3001/api/games";
 
   // Get all unique gamers from the games
@@ -140,7 +140,9 @@ const GamesDatabase = () => {
           body: JSON.stringify({
             game: newGame.game,
             players: parseInt(newGame.players),
-            gamers: selectedGamers.join(',')
+            gamers: selectedGamers.join(','),
+            fullPartyOnly: newGame.fullPartyOnly,
+            remotePlay: newGame.remotePlay
           })
         });
         
@@ -149,12 +151,45 @@ const GamesDatabase = () => {
           throw new Error(errorData.error || 'Failed to add game');
         }
         
-        setNewGame({ game: '', players: '', gamers: '', newGamerName: '' });
+        setNewGame({ 
+          game: '', 
+          players: '', 
+          gamers: '', 
+          newGamerName: '', 
+          fullPartyOnly: false, 
+          remotePlay: false 
+        });
         setSelectedGamers([]);
-        fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
+        fetchGames(showPlayableGames, playersLookingToPlay);
         
       } catch (err) {
         console.error('Add game error:', err);
+        setError(err.message);
+      }
+    }
+  };
+
+    const updateGame = async () => {
+    if (editedGame.game && editedGame.players) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/game/${game.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            game: editedGame.game,
+            players: parseInt(editedGame.players)
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update game');
+        }
+        
+        setIsEditing(false);
+        fetchGames(showPlayableGames, playersLookingToPlay);
+      } catch (err) {
+        console.error('Update game error:', err);
         setError(err.message);
       }
     }
@@ -246,45 +281,154 @@ const GamesDatabase = () => {
     return matchesSearch && matchesGamer;
   });
 
+  const selectRandomGame = () => {
+    const validGames = filteredGames.filter(game => {
+      if (playersLookingToPlay.length === 0) return false;
+      
+      if (game.remotePlay) {
+        // For remote play, only need one owner
+        const hasOwner = playersLookingToPlay.some(player => game.gamers.includes(player));
+        if (!hasOwner) return false;
+      } else {
+        // For regular games, all players must own it
+        const allPlayersOwn = playersLookingToPlay.every(player => game.gamers.includes(player));
+        if (!allPlayersOwn) return false;
+      }
+      
+      // Check full party requirement
+      if (game.fullPartyOnly && playersLookingToPlay.length !== game.players) {
+        return false;
+      }
+      
+      // Check if game can accommodate the number of players
+      if (game.players < playersLookingToPlay.length) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    if (validGames.length > 0) {
+      const randomIndex = Math.floor(Math.random() * validGames.length);
+      setRandomGame(validGames[randomIndex]);
+    } else {
+      setRandomGame(null);
+    }
+  };
+
   const GameCard = ({ game }) => {
     const [newGamer, setNewGamer] = useState('');
-    
-    // Check if this game can be played by the specified group
+    const [selectedExistingGamer, setSelectedExistingGamer] = useState('');
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedGame, setEditedGame] = useState({ game: game.game, players: game.players });
+
+    // Get available gamers (not already in this game)
+    const availableGamers = getAllGamers().filter(gamer => !game.gamers.includes(gamer));
+
+    // Add existing gamer to game
+    const addExistingGamer = () => {
+      if (selectedExistingGamer) {
+        addGamerToGame(game.id, selectedExistingGamer);
+        setSelectedExistingGamer('');
+        setShowDropdown(false);
+      }
+    };
+
     let canPlayWithGroup = false;
     if (showPlayableGames && playersLookingToPlay.length > 0) {
-      canPlayWithGroup = playersLookingToPlay.every(player => 
-        game.gamers.includes(player)
-      );
+      if (game.remotePlay) {
+        // For remote play games, only one owner needs to be selected
+        canPlayWithGroup = playersLookingToPlay.some(player => game.gamers.includes(player));
+      } else {
+        // For regular games, all players must own the game
+        canPlayWithGroup = playersLookingToPlay.every(player => game.gamers.includes(player));
+      }
+      
+      // Check full party requirement
+      if (game.fullPartyOnly && playersLookingToPlay.length !== game.players) {
+        canPlayWithGroup = false;
+      }
     }
 
-    return (
+     return (
       <div className={`bg-gray-800 rounded-lg shadow-md p-6 border-l-4 transition-all duration-200 hover:shadow-lg ${
         showPlayableGames && canPlayWithGroup ? 'border-green-500' : 'border-blue-500'
       }`}>
         <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-white">{game.game}</h3>
-            <div className="flex items-center gap-4 mt-2">
-              <span className="flex items-center gap-1 text-gray-300">
-                <Users size={16} />
-                Max Players: {game.players}
-              </span>
-              {/* {showPlayableGames && canPlayWithGroup && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                  ✓ All Players Own This Game
-                </span>
-              )} */}
-            </div>
+          <div className="flex-1">
+            {isEditing ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editedGame.game}
+                  onChange={(e) => setEditedGame({ ...editedGame, game: e.target.value })}
+                  className="text-xl font-bold bg-gray-700 text-white px-2 py-1 rounded w-full"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={editedGame.players}
+                  onChange={(e) => setEditedGame({ ...editedGame, players: e.target.value })}
+                  className="bg-gray-700 text-white px-2 py-1 rounded w-24"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={updateGame}
+                    className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-xl font-bold text-white">{game.game}</h3>
+                <div className="flex items-center gap-4 mt-2">
+                  <span className="flex items-center gap-1 text-gray-300">
+                    <Users size={16} />
+                    Max Players: {game.players}
+                  </span>
+                  {game.remotePlay && (
+                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm">
+                      Remote Play
+                    </span>
+                  )}
+                  {game.fullPartyOnly && (
+                    <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm">
+                      Full Party Only
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <button
-            onClick={() => deleteGame(game.id)}
-            className="text-red-500 hover:text-red-700 p-1 transition-colors"
-            title="Delete game"
-          >
-            <Trash2 size={18} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="text-blue-500 hover:text-blue-700 p-1 transition-colors"
+              title="Edit game"
+            >
+              <Edit size={18} />
+            </button>
+            <button
+              onClick={() => deleteGame(game.id)}
+              className="text-red-500 hover:text-red-700 p-1 transition-colors"
+              title="Delete game"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         </div>
 
+        {/* Game Owners section remains the same */}
         <div className="mb-4">
           <h4 className="font-semibold text-gray-300 mb-2">Game Owners:</h4>
           <div className="flex flex-wrap gap-2">
@@ -314,30 +458,73 @@ const GamesDatabase = () => {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Add new gamer..."
-            value={newGamer}
-            onChange={(e) => setNewGamer(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
+        {/* Updated add gamer section */}
+        <div className="space-y-2">
+          {/* Existing gamer dropdown */}
+          {availableGamers.length > 0 && (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-left bg-white flex items-center justify-between"
+                >
+                  {selectedExistingGamer || "Select existing gamer..."}
+                  <ChevronDown size={16} />
+                </button>
+                {showDropdown && (
+                  <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    {availableGamers.map(gamer => (
+                      <button
+                        key={gamer}
+                        onClick={() => {
+                          setSelectedExistingGamer(gamer);
+                          setShowDropdown(false);
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-900"
+                      >
+                        {gamer}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={addExistingGamer}
+                disabled={!selectedExistingGamer}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+              >
+                <UserPlus size={16} />
+                Add
+              </button>
+            </div>
+          )}
+
+          {/* New gamer input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Add new gamer..."
+              value={newGamer}
+              onChange={(e) => setNewGamer(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  addGamerToGame(game.id, newGamer);
+                  setNewGamer('');
+                }
+              }}
+            />
+            <button
+              onClick={() => {
                 addGamerToGame(game.id, newGamer);
                 setNewGamer('');
-              }
-            }}
-          />
-          <button
-            onClick={() => {
-              addGamerToGame(game.id, newGamer);
-              setNewGamer('');
-            }}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors"
-          >
-            <UserPlus size={16} />
-            Add
-          </button>
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors"
+            >
+              <UserPlus size={16} />
+              Add
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -517,13 +704,45 @@ const GamesDatabase = () => {
                             Clear Filter
                           </button>
                         )}
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            onClick={selectRandomGame}
+                            disabled={playersLookingToPlay.length === 0}
+                            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                          >
+                            <Shuffle size={16} />
+                            Pick Random Game
+                          </button>
+                          {randomGame && (
+                            <button
+                              onClick={() => setRandomGame(null)}
+                              className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 flex items-center gap-2 transition-colors"
+                            >
+                              Clear Selection
+                            </button>
+                          )}
+                        </div>
+
+                        {randomGame && (
+                          <div className="mt-4 p-4 bg-purple-900 rounded-md border border-purple-500">
+                            <h4 className="text-lg font-bold text-white mb-2">🎲 Random Game Selection</h4>
+                            <div className="text-purple-200">
+                              <p className="text-xl font-semibold">{randomGame.game}</p>
+                              <p className="text-sm">Max Players: {randomGame.players}</p>
+                              <p className="text-sm">Owners: {randomGame.gamers.join(', ')}</p>
+                              {randomGame.remotePlay && <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">Remote Play</span>}
+                              {randomGame.fullPartyOnly && <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs ml-2">Full Party Only</span>}
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                     
                     {showPlayableGames && playersLookingToPlay.length > 0 && (
                       <div className="mt-3 p-3 bg-green-900 rounded-md">
                         <p className="text-sm text-green-200">
-                          <strong>Showing {playersLookingToPlay.length}-player games that ALL of these players own:</strong> {playersLookingToPlay.join(', ')}
+                          <strong>Showing {playersLookingToPlay.length}+ player games that ALL of these players own:</strong> {playersLookingToPlay.join(', ')}
                         </p>
                       </div>
                     )}
@@ -561,127 +780,159 @@ const GamesDatabase = () => {
 
         {/* Add Game Tab */}
         {activeTab === 'add' && (
-          <div className="bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-white mb-6">Add New Game</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Game Name
-                </label>
+        <div className="bg-gray-800 rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-white mb-6">Add New Game</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Game Name
+              </label>
+              <input
+                type="text"
+                placeholder="Enter game name..."
+                value={newGame.game}
+                onChange={(e) => setNewGame({ ...newGame, game: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Max Players
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                placeholder="Enter max players..."
+                value={newGame.players}
+                onChange={(e) => setNewGame({ ...newGame, players: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-700 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Game Flags */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Game Options
+              </label>
+              <div className="flex items-center space-x-2">
                 <input
-                  type="text"
-                  placeholder="Enter game name..."
-                  value={newGame.game}
-                  onChange={(e) => setNewGame({ ...newGame, game: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="checkbox"
+                  id="fullPartyOnly"
+                  checked={newGame.fullPartyOnly}
+                  onChange={(e) => setNewGame({ ...newGame, fullPartyOnly: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
+                <label htmlFor="fullPartyOnly" className="text-sm text-gray-300">
+                  Full Party Only (requires exact player count)
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="remotePlay"
+                  checked={newGame.remotePlay}
+                  onChange={(e) => setNewGame({ ...newGame, remotePlay: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remotePlay" className="text-sm text-gray-300">
+                  Remote Play (only owner needs to own the game)
+                </label>
+              </div>
+            </div>
+            
+            {/* Game Owners section remains the same */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Game Owners
+              </label>
+              
+              {/* Selected Gamers Display */}
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-2">
+                  {selectedGamers.map(gamer => (
+                    <span key={gamer} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                      {gamer}
+                      <button
+                        onClick={() => removeGamerFromSelected(gamer)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  {selectedGamers.length === 0 && (
+                    <span className="text-gray-500 text-sm">No owners selected</span>
+                  )}
+                </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Max Players
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  placeholder="Enter max players..."
-                  value={newGame.players}
-                  onChange={(e) => setNewGame({ ...newGame, players: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-700 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
+              {/* Add Players */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Game Owners
+                  Select Existing Players
                 </label>
-                
-                {/* Selected Gamers Display */}
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-2">
-                    {selectedGamers.map(gamer => (
-                      <span key={gamer} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                        {gamer}
-                        <button
-                          onClick={() => removeGamerFromSelected(gamer)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                    {selectedGamers.length === 0 && (
-                      <span className="text-gray-500 text-sm">No owners selected</span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Add Players */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Select Existing Players
-                  </label>
-                  <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
-                    {getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
-                      <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-700 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              addGamerToSelected(gamer);
-                            }
-                          }}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-300">{gamer}</span>
-                      </label>
-                    ))}
-                    
-                    {/* Add New Gamer as last entry */}
-                    <div className="flex items-center space-x-2 mb-2 p-1 rounded">
-                      <div className="flex gap-2 flex-1">
-                        <input
-                          type="text"
-                          placeholder="Enter new gamer name..."
-                          value={newGame.newGamerName}
-                          onChange={(e) => setNewGame({ ...newGame, newGamerName: e.target.value })}
-                          className="flex-1 px-2 py-1 border border-gray-700 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              addNewGamerToSelected();
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={addNewGamerToSelected}
-                          disabled={!newGame.newGamerName.trim()}
-                          className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
-                        >
-                          <Plus size={14} />
-                          Add
-                        </button>
-                      </div>
+                <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
+                  {getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
+                    <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-700 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            addGamerToSelected(gamer);
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-300">{gamer}</span>
+                    </label>
+                  ))}
+                  
+                  {/* Add New Gamer as last entry */}
+                  <div className="flex items-center space-x-2 mb-2 p-1 rounded">
+                    <div className="flex gap-2 flex-1">
+                      <input
+                        type="text"
+                        placeholder="Enter new gamer name..."
+                        value={newGame.newGamerName}
+                        onChange={(e) => setNewGame({ ...newGame, newGamerName: e.target.value })}
+                        className="flex-1 px-2 py-1 border border-gray-700 bg-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            addNewGamerToSelected();
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={addNewGamerToSelected}
+                        disabled={!newGame.newGamerName.trim()}
+                        className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
+                      >
+                        <Plus size={14} />
+                        Add
+                      </button>
                     </div>
                   </div>
                 </div>
-                
-                <p className="text-sm text-gray-500 mt-2">
-                  Select from existing gamers or add new ones. At least one owner is required.
-                </p>
               </div>
               
-              <button
-                onClick={addGame}
-                disabled={!newGame.game || !newGame.players || selectedGamers.length === 0}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
-              >
-                <Plus size={16} />
-                Add Game
-              </button>
+              <p className="text-sm text-gray-500 mt-2">
+                Select from existing gamers or add new ones. At least one owner is required.
+              </p>
             </div>
+            
+            <button
+              onClick={addGame}
+              disabled={!newGame.game || !newGame.players || selectedGamers.length === 0}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+            >
+              <Plus size={16} />
+              Add Game
+            </button>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );
