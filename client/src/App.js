@@ -918,7 +918,7 @@ const GamesDatabase = () => {
 									</label>
 									<div className="flex flex-wrap gap-2 border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
 										{getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
-											<label key={gamer} onClick={() => addPlayerToFinder(gamer)} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800 cursor-pointer">
+											<label key={gamer} onClick={() => addGamerToSelected(gamer)} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800 cursor-pointer">
 												<UserPlus size={16} />
 												<span className="text-sm">{gamer}</span>
 											</label>
