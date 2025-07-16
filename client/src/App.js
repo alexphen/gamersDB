@@ -458,9 +458,9 @@ const GamesDatabase = () => {
           </div>
         </div>
 
-        {/* Add Gamers toggle and expandable panel */}
+        {/* Add Gamers toggle and multiselect panel */}
         <div className="space-y-2">
-          {/* Toggle Button */}
+          {/* Toggle */}
           <button
             onClick={() => setShowDropdown(!showDropdown)}
             className="text-blue-400 hover:text-blue-200 text-sm flex items-center gap-1"
@@ -472,33 +472,40 @@ const GamesDatabase = () => {
             />
           </button>
 
-          {/* Expandable Panel */}
+          {/* Expandable Multiselect Panel */}
           {showDropdown && (
             <div className="bg-gray-700 rounded p-4 space-y-4 border border-gray-600">
-              {/* Available Existing Gamers */}
-              {availableGamers.length > 0 ? (
-                <div>
-                  <h5 className="text-sm font-semibold text-gray-300 mb-2">Available Gamers:</h5>
-                  <div className="flex flex-wrap gap-2">
-                    {availableGamers.map((gamer, index) => (
+              {/* Select Multiple Existing Gamers */}
+              <div>
+                <h5 className="text-sm font-semibold text-gray-300 mb-2">Select Gamers to Add:</h5>
+                <div className="flex flex-wrap gap-2">
+                  {availableGamers.map((gamer) => {
+                    const isSelected = selectedExistingGamer.includes(gamer);
+                    return (
                       <button
-                        key={index}
+                        key={gamer}
                         onClick={() => {
-                          addGamerToGame(game.id, gamer);
+                          setSelectedExistingGamer(prev =>
+                            isSelected
+                              ? prev.filter(g => g !== gamer)
+                              : [...prev, gamer]
+                          );
                         }}
-                        className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                        className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 transition-colors ${
+                          isSelected
+                            ? 'bg-green-200 text-green-800'
+                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                        }`}
                       >
                         {gamer}
-                        <UserPlus size={14} />
+                        {isSelected && <Check size={14} />}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <p className="text-sm text-gray-400">No available gamers to add.</p>
-              )}
+              </div>
 
-              {/* New Gamer Input */}
+              {/* Optional New Gamer Input */}
               <div className="flex gap-2 items-center">
                 <input
                   type="text"
@@ -507,7 +514,7 @@ const GamesDatabase = () => {
                   onChange={(e) => setNewGamer(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newGamer.trim()) {
-                      addGamerToGame(game.id, newGamer.trim());
+                      setSelectedExistingGamer([...selectedExistingGamer, newGamer.trim()]);
                       setNewGamer('');
                     }
                   }}
@@ -516,14 +523,29 @@ const GamesDatabase = () => {
                 <button
                   onClick={() => {
                     if (newGamer.trim()) {
-                      addGamerToGame(game.id, newGamer.trim());
+                      setSelectedExistingGamer([...selectedExistingGamer, newGamer.trim()]);
                       setNewGamer('');
                     }
                   }}
                   className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors"
                 >
                   <UserPlus size={16} />
-                  Add
+                  Queue
+                </button>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    selectedExistingGamer.forEach(gamer => addGamerToGame(game.id, gamer));
+                    setSelectedExistingGamer([]);
+                    setShowDropdown(false); // optional collapse
+                  }}
+                  disabled={selectedExistingGamer.length === 0}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Add Selected Gamers
                 </button>
               </div>
             </div>
@@ -753,7 +775,7 @@ const GamesDatabase = () => {
                 </div>
 
                 {/* Games Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 items-start lg:grid-cols-2 gap-6">
                   {filteredGames.map(game => (
                     <GameCard key={game.id} game={game} />
                   ))}
