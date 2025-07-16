@@ -257,37 +257,40 @@ const GamesDatabase = () => {
 
   const selectRandomGame = () => {
     const validGames = filteredGames.filter(game => {
-      if (playersLookingToPlay.length === 0) return false;
-      
-      if (game.remotePlay) {
-        // For remote play, only need one owner
-        const hasOwner = playersLookingToPlay.some(player => game.gamers.includes(player));
-        if (!hasOwner) return false;
-      } else {
-        // For regular games, all players must own it
-        const allPlayersOwn = playersLookingToPlay.every(player => game.gamers.includes(player));
-        if (!allPlayersOwn) return false;
-      }
-      
-      // Check full party requirement
-      if (game.fullPartyOnly && playersLookingToPlay.length !== game.players) {
-        return false;
-      }
+		if (playersLookingToPlay.length === 0) return false;
+		console.log(playersLookingToPlay)
+		
+		if (game.remotePlay) {
+			// For remote play, only need one owner
+			const hasOwner = playersLookingToPlay.some(player => game.gamers.includes(player));
+			console.log("hasOwner", hasOwner)
+			if (!hasOwner) return false;
+		} else {
+			// For regular games, all players must own it
+			const allPlayersOwn = playersLookingToPlay.every(player => game.gamers.includes(player));
+			console.log("allPlayersOwn", allPlayersOwn)
+			if (!allPlayersOwn) return false;
+		}
+		
+		// Check full party requirement
+		if (game.fullPartyOnly && playersLookingToPlay.length !== game.players) {
+			return false;
+		}
       
       // Check if game can accommodate the number of players
-      if (game.players < playersLookingToPlay.length) {
-        return false;
-      }
+		if (game.players < playersLookingToPlay.length) {
+			return false;
+		}
       
-      return true;
+      	return true;
     });
     
     if (validGames.length > 0) {
-      const randomIndex = Math.floor(Math.random() * validGames.length);
-      setRandomGame(validGames[randomIndex]);
-    } else {
-      setRandomGame(null);
-    }
+		const randomIndex = Math.floor(Math.random() * validGames.length);
+		setRandomGame(validGames[randomIndex]);
+	} else {
+		setRandomGame(null);
+	}
   };
 
   const GameCard = ({ game }) => {
@@ -801,7 +804,7 @@ const GamesDatabase = () => {
               </button>
             </div>
           )}
-          
+
           <h2 className="text-2xl font-bold text-white mb-6">Add New Game</h2>
           <div className="space-y-6">
             <div>
@@ -894,21 +897,13 @@ const GamesDatabase = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Select Existing Players
                 </label>
-                <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
-                  {getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
-                    <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-700 p-1 rounded">
-                      <input
-                        type="checkbox"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            addGamerToSelected(gamer);
-                          }
-                        }}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="text-sm text-gray-300">{gamer}</span>
-                    </label>
-                  ))}
+					<div className="flex flex-wrap gap-2 border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
+                  	{getAllGamers().filter(gamer => !selectedGamers.includes(gamer)).map(gamer => (
+						<label key={gamer} onClick={() => addPlayerToFinder(gamer)} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800 cursor-pointer">
+							<UserPlus size={16} />
+							<span className="text-sm">{gamer}</span>
+						</label>
+					))}
                   
                   {/* Add New Gamer as last entry */}
                   <div className="flex items-center space-x-2 mb-2 p-1 rounded">
