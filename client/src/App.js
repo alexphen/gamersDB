@@ -209,7 +209,7 @@ const GamesDatabase = () => {
           throw new Error(errorData.error || 'Failed to add gamer');
         }
         
-        fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
+        // fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
         
       } catch (err) {
         console.error('Add gamer error:', err);
@@ -299,15 +299,6 @@ const GamesDatabase = () => {
 
     // Get available gamers (not already in this game)
     const availableGamers = getAllGamers().filter(gamer => !game.gamers.includes(gamer));
-
-    // Add existing gamer to game
-    const addExistingGamer = () => {
-      if (selectedExistingGamer) {
-        addGamerToGame(game.id, selectedExistingGamer);
-        setSelectedExistingGamer('');
-        setShowDropdown(false);
-      }
-    };
 
     const updateGame = async () => {
       if (editedGame.game && editedGame.players) {
@@ -541,6 +532,7 @@ const GamesDatabase = () => {
                     selectedExistingGamer.forEach(gamer => addGamerToGame(game.id, gamer));
                     setSelectedExistingGamer([]);
                     setShowDropdown(false); // optional collapse
+                    fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
                   }}
                   disabled={selectedExistingGamer.length === 0}
                   className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -691,15 +683,15 @@ const GamesDatabase = () => {
                             <div className="border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                               {getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).length > 0 ? (
                                 getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).map(gamer => (
-                                  <label key={gamer} className="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-900 p-1 rounded">
+                                  <label key={gamer} className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors">
+                                  <UserPlus size={16} />
                                     <input
-                                      type="checkbox"
                                       onChange={(e) => {
                                         if (e.target.checked) {
                                           addPlayerToFinder(gamer);
                                         }
                                       }}
-                                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                      className="h-4 w-4 focus:ring-green-500 border-gray-300 rounded"
                                     />
                                     <span className="text-sm text-gray-300">{gamer}</span>
                                   </label>
@@ -712,7 +704,7 @@ const GamesDatabase = () => {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2items-start flex-wrap">
+                      <div className="flex gap-2 items-start flex-wrap">
                         <button
                           onClick={applyGameFinder}
                           disabled={playersLookingToPlay.length === 0}
