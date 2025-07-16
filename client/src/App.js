@@ -576,7 +576,7 @@ const GamesDatabase = () => {
 			<div className="max-w-6xl mx-auto">
 				<h1 className="text-3xl font-bold text-white mb-8 flex items-center gap-2">
 					<Database size={32} />
-					Gamers Database Manager
+					Gamers Database Manager - Party Game Picker
 				</h1>
 
 				{/* Navigation Tabs */}
