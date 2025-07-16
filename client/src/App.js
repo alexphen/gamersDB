@@ -257,6 +257,7 @@ const GamesDatabase = () => {
 
   const selectRandomGame = () => {
     const validGames = filteredGames.filter(game => {
+		console.log(game)
 		if (playersLookingToPlay.length === 0) return false;
 		console.log(playersLookingToPlay)
 		
