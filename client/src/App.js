@@ -260,6 +260,7 @@ const GamesDatabase = () => {
 		if (playersLookingToPlay.length === 0) return false;
 		console.log(playersLookingToPlay)
 		
+		console.log("remote", game.remotePlay)
 		if (game.remotePlay) {
 			// For remote play, only need one owner
 			const hasOwner = playersLookingToPlay.some(player => game.gamers.includes(player));
