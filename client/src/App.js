@@ -109,7 +109,9 @@ const GamesDatabase = () => {
         id: item.rowid,
         game: item.game,
         players: item.players,
-        gamers: item.gamer_list
+        gamers: item.gamer_list,
+		remotePlay: item.remotePlay,
+		fullPartyOnly: item.fullPartyOnly
       }));
       
       setGames(transformedGames);
