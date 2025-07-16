@@ -458,60 +458,76 @@ const GamesDatabase = () => {
           </div>
         </div>
 
-        {/* Updated add gamer section */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Type or select a gamer..."
-            value={newGamer}
-            onChange={(e) => {
-              setNewGamer(e.target.value);
-              setShowDropdown(true);
-            }}
-            onFocus={() => setShowDropdown(true)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newGamer.trim()) {
-                addGamerToGame(game.id, newGamer.trim());
-                setNewGamer('');
-                setShowDropdown(false);
-              }
-            }}
-          />
-          {showDropdown && newGamer && (
-            <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
-              {availableGamers
-                .filter(gamer =>
-                  gamer.toLowerCase().includes(newGamer.toLowerCase())
-                )
-                .map(gamer => (
-                  <button
-                    key={gamer}
-                    onClick={() => {
-                      addGamerToGame(game.id, gamer);
+        {/* Add Gamers toggle and expandable panel */}
+        <div className="space-y-2">
+          {/* Toggle Button */}
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="text-blue-400 hover:text-blue-200 text-sm flex items-center gap-1"
+          >
+            Add Gamers...
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {/* Expandable Panel */}
+          {showDropdown && (
+            <div className="bg-gray-700 rounded p-4 space-y-4 border border-gray-600">
+              {/* Available Existing Gamers */}
+              {availableGamers.length > 0 ? (
+                <div>
+                  <h5 className="text-sm font-semibold text-gray-300 mb-2">Available Gamers:</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {availableGamers.map((gamer, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          addGamerToGame(game.id, gamer);
+                        }}
+                        className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                      >
+                        {gamer}
+                        <UserPlus size={14} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">No available gamers to add.</p>
+              )}
+
+              {/* New Gamer Input */}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Add new gamer..."
+                  value={newGamer}
+                  onChange={(e) => setNewGamer(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newGamer.trim()) {
+                      addGamerToGame(game.id, newGamer.trim());
                       setNewGamer('');
-                      setShowDropdown(false);
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-gray-100 text-gray-900"
-                  >
-                    {gamer}
-                  </button>
-                ))}
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-500 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    if (newGamer.trim()) {
+                      addGamerToGame(game.id, newGamer.trim());
+                      setNewGamer('');
+                    }
+                  }}
+                  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors"
+                >
+                  <UserPlus size={16} />
+                  Add
+                </button>
+              </div>
             </div>
           )}
-          <button
-            onClick={() => {
-              if (newGamer.trim()) {
-                addGamerToGame(game.id, newGamer.trim());
-                setNewGamer('');
-                setShowDropdown(false);
-              }
-            }}
-            className="mt-2 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 flex items-center gap-1 transition-colors"
-          >
-            <UserPlus size={16} />
-            Add
-          </button>
         </div>
       </div>
     );
