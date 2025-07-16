@@ -302,7 +302,7 @@ const GamesDatabase = () => {
 		const [selectedExistingGamer, setSelectedExistingGamer] = useState([]); // now an array
 		const [showDropdown, setShowDropdown] = useState(false);
 		const [isEditing, setIsEditing] = useState(false);
-		const [editedGame, setEditedGame] = useState({ game: game.game, players: game.players });
+		const [editedGame, setEditedGame] = useState({ game: game.game, players: game.players, remotePlay: game.remotePlay, fullPartyOnly: game.fullPartyOnly });
 
 		// Get available gamers (not already in this game)
 		const availableGamers = getAllGamers().filter(gamer => !game.gamers.includes(gamer));
@@ -315,7 +315,9 @@ const GamesDatabase = () => {
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
 							game: editedGame.game,
-							players: parseInt(editedGame.players)
+							players: parseInt(editedGame.players),
+							remotePlay: editedGame.remotePlay,
+							fullPartyOnly: editedGame.fullPartyOnly
 						})
 					});
 
