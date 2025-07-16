@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Users, Trash2, UserPlus, UserMinus, Database, Eye, Filter, AlertCircle, X, ChevronDown, Edit, Shuffle } from 'lucide-react';
+import { Plus, Search, Users, Trash2, UserPlus, UserMinus, Database, Eye, Filter, AlertCircle, X, Check, ChevronDown, Edit, Shuffle } from 'lucide-react';
 
 const GamesDatabase = () => {
   const [games, setGames] = useState([]);
@@ -292,7 +292,7 @@ const GamesDatabase = () => {
 
   const GameCard = ({ game }) => {
     const [newGamer, setNewGamer] = useState('');
-    const [selectedExistingGamer, setSelectedExistingGamer] = useState('');
+    const [selectedExistingGamer, setSelectedExistingGamer] = useState([]); // now an array
     const [showDropdown, setShowDropdown] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedGame, setEditedGame] = useState({ game: game.game, players: game.players });
