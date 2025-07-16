@@ -169,32 +169,6 @@ const GamesDatabase = () => {
     }
   };
 
-    const updateGame = async () => {
-    if (editedGame.game && editedGame.players) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/game/${game.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            game: editedGame.game,
-            players: parseInt(editedGame.players)
-          })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update game');
-        }
-        
-        setIsEditing(false);
-        fetchGames(showPlayableGames, playersLookingToPlay);
-      } catch (err) {
-        console.error('Update game error:', err);
-        setError(err.message);
-      }
-    }
-  };
-
   // Delete game
   const deleteGame = async (id) => {
     try {
@@ -332,6 +306,32 @@ const GamesDatabase = () => {
         addGamerToGame(game.id, selectedExistingGamer);
         setSelectedExistingGamer('');
         setShowDropdown(false);
+      }
+    };
+
+    const updateGame = async () => {
+      if (editedGame.game && editedGame.players) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/game/${game.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              game: editedGame.game,
+              players: parseInt(editedGame.players)
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update game');
+          }
+          
+          setIsEditing(false);
+          fetchGames(showPlayableGames, playersLookingToPlay);
+        } catch (err) {
+          console.error('Update game error:', err);
+          setError(err.message);
+        }
       }
     };
 
