@@ -14,7 +14,7 @@ class DbOps {
         const conn = await oracledb.getConnection();
         try {
             const result = await conn.execute(
-                `SELECT rowid, game, players, gamers, fullPartyOnly, remotePlay FROM GAMES ORDER BY game COLLATE NOCASE`
+                `SELECT rowid, game, players, gamers, fullPartyOnly, remotePlay FROM GAMES ORDER BY lower(game)`
             );
             
             const items = result.rows.map(row => ({
