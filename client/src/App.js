@@ -786,6 +786,22 @@ const GamesDatabase = () => {
         {/* Add Game Tab */}
         {activeTab === 'add' && (
         <div className="bg-gray-800 rounded-lg shadow-md p-6">
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded mb-4 flex items-center gap-2">
+              <AlertCircle size={16} />
+              <div className="flex-1">
+                <strong>Error:</strong> {error}
+              </div>
+              <button 
+                onClick={() => setError(null)}
+                className="text-red-500 hover:text-red-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          
           <h2 className="text-2xl font-bold text-white mb-6">Add New Game</h2>
           <div className="space-y-6">
             <div>
