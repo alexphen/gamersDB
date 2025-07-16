@@ -880,7 +880,7 @@ const GamesDatabase = () => {
 										className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
 									/>
 									<label htmlFor="remotePlay" className="text-sm text-gray-300">
-										Remote Play (only owner needs to own the game)
+										Remote Play (only one host needs to own the game)
 									</label>
 								</div>
 							</div>
