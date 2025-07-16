@@ -683,7 +683,7 @@ const GamesDatabase = () => {
                             <div className="flex flex-wrap gap-2 border border-gray-300 rounded-md p-3 max-h-40 overflow-y-auto">
                               {getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).length > 0 ? (
                                 getAllGamers().filter(gamer => !playersLookingToPlay.includes(gamer)).map(gamer => (
-                                  <label key={gamer} onClick={(e) => addPlayerToFinder(e)} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800">
+                                  <label key={gamer} onClick={() => addPlayerToFinder(gamer)} className="px-3 py-1 rounded-full text-sm flex items-center gap-1 bg-blue-100 text-blue-800">
                                     <UserPlus size={16} />
                                     <span className="text-sm">{gamer}</span>
                                   </label>
