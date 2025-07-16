@@ -67,7 +67,7 @@ init();
 // Fetch all games
 app.get('/api/games/all', async (req, res) => {
   try {
-    console.log("Called all", req.body);
+    console.log("Called fetch all games");
     const items = await DbOps.getAllGames();
     res.json({ items });
   } catch (err) {

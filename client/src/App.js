@@ -176,7 +176,10 @@ const GamesDatabase = () => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/game/${id}`, {
 				method: 'DELETE',
-				body: id
+				body: JSON.stringify({
+					id: id,
+					game: game
+				})
 			});
 
 			if (!response.ok) {
@@ -193,7 +196,7 @@ const GamesDatabase = () => {
 	};
 
 	// Add gamer to game
-	const addGamerToGame = async (gameId, gamerName) => {
+	const addGamerToGame = async (gameId, game, gamerName) => {
 		if (gamerName.trim()) {
 			try {
 				const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
@@ -202,6 +205,7 @@ const GamesDatabase = () => {
 						'Content-Type': 'application/json',
 					},
 					body: JSON.stringify({
+						game: game,
 						gamer_name: gamerName.trim()
 					})
 				});
@@ -221,7 +225,7 @@ const GamesDatabase = () => {
 	};
 
 	// Remove gamer from game
-	const removeGamerFromGame = async (gameId, gamerName) => {
+	const removeGamerFromGame = async (gameId, game, gamerName) => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
 				method: 'DELETE',
@@ -230,6 +234,7 @@ const GamesDatabase = () => {
 				},
 				body: JSON.stringify({
 					gamer_name: gamerName,
+					game: game,
 					gameID: gameId
 				})
 			});
@@ -460,7 +465,7 @@ const GamesDatabase = () => {
 								>
 									{gamer}
 									<button
-										onClick={() => removeGamerFromGame(game.id, gamer)}
+										onClick={() => removeGamerFromGame(game.id, game.game, gamer)}
 										className="text-red-500 hover:text-red-700 ml-1 transition-colors"
 										title="Remove gamer"
 									>

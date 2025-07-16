@@ -236,7 +236,6 @@ class DbOps {
                 }
             });
 
-            console.log('Filtered items:', items);
             return items;
         } finally {
             await conn.close();
