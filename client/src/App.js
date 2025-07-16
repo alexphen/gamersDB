@@ -364,28 +364,30 @@ const GamesDatabase = () => {
 									onChange={(e) => setEditedGame({ ...editedGame, game: e.target.value })}
 									className="text-xl font-bold bg-gray-700 text-white px-2 py-1 rounded w-full"
 								/>
-								<input
-									type="number"
-									min="1"
-									max="20"
-									value={editedGame.players}
-									onChange={(e) => setEditedGame({ ...editedGame, players: e.target.value })}
-									className="bg-gray-700 text-white px-2 py-1 rounded w-24"
-								/>
-								<input
-									type='checkbox'
-									value={editedGame.remotePlay}
-									onChange={(e) => setEditedGame({...editedGame, remotePlay: e.target.checked})}
-									className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-								/>
-								<span className="text-sm text-gray-300">Remote Play</span>
-								<input
-									type='checkbox'
-									value={editedGame.fullPartyOnly}
-									onChange={(e) => setEditedGame({...editedGame, fullPartyOnly: e.target.checked})}
-									className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-								/>
-								<span className="text-sm text-gray-300">Full Party Only</span>
+								<div className="flex gap-2"> 
+									<input
+										type="number"
+										min="1"
+										max="20"
+										value={editedGame.players}
+										onChange={(e) => setEditedGame({ ...editedGame, players: e.target.value })}
+										className="bg-gray-700 text-white px-2 py-1 rounded w-24"
+									/>
+									<input
+										type='checkbox'
+										value={editedGame.remotePlay}
+										onChange={(e) => setEditedGame({...editedGame, remotePlay: e.target.checked})}
+										className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+									/>
+									<span className="text-sm text-gray-300">Remote Play</span>
+									<input
+										type='checkbox'
+										value={editedGame.fullPartyOnly}
+										onChange={(e) => setEditedGame({...editedGame, fullPartyOnly: e.target.checked})}
+										className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+									/>
+									<span className="text-sm text-gray-300">Full Party Only</span>
+								</div>
 								<div className="flex gap-2">
 									<button
 										onClick={updateGame}
