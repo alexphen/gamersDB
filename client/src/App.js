@@ -199,6 +199,7 @@ const GamesDatabase = () => {
 	const addGamerToGame = async (gameId, game, gamerName) => {
 		if (gamerName) {
 			try {
+				console.log("adding gamer")
 				const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
 					method: 'POST',
 					headers: {
@@ -215,7 +216,7 @@ const GamesDatabase = () => {
 					throw new Error(errorData.error || 'Failed to add gamer');
 				}
 
-				// fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
+				fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
 
 			} catch (err) {
 				console.error('Add gamer error:', err);
