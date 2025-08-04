@@ -559,7 +559,7 @@ const GamesDatabase = () => {
 							<div className="flex gap-2 justify-end">
 								<button
 									onClick={() => {
-										selectedExistingGamer.forEach(gamer => addGamerToGame(game.id, gamer));
+										selectedExistingGamer.forEach(gamer => addGamerToGame(game.id, game.game, gamer));
 										setSelectedExistingGamer([]);
 										setShowDropdown(false); // optional collapse
 										fetchGames(showPlayableGames, playersLookingToPlay); // Maintain current filter state
