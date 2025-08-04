@@ -197,7 +197,7 @@ const GamesDatabase = () => {
 
 	// Add gamer to game
 	const addGamerToGame = async (gameId, game, gamerName) => {
-		if (gamerName.trim()) {
+		if (gamerName) {
 			try {
 				const response = await fetch(`${API_BASE_URL}/game/${gameId}/gamers`, {
 					method: 'POST',
