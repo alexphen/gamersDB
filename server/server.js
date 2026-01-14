@@ -23,7 +23,7 @@ async function init() {
       await oracledb.createPool({
         user: 'ADMIN',
         password: process.env.ORACLE_PASSWORD,
-        connectString: process.env.ORACLE_CONNECT_STRING,
+        connectString: process.env.ORACLE_CONNECT_STRING
       });
 
       console.log(process.env.ORACLE_PASSWORD)
