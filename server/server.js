@@ -16,6 +16,7 @@ app.use(express.static(path.join(__dirname, '../client/build')));
 
 const port = process.env.PORT || 3001;
 
+
 // OracleDB Initialization
 async function init() {
     try {
@@ -57,7 +58,7 @@ init();
 // Fetch all games
 app.get('/api/games/all', async (req, res) => {
   try {
-    console.log("Called all", req.body);
+    console.log("Called fetch all games");
     const items = await DbOps.getAllGames();
     res.json({ items });
   } catch (err) {
@@ -69,9 +70,22 @@ app.get('/api/games/all', async (req, res) => {
 app.post('/api/games/all', async (req, res) => {
   try {
     console.log("Called add game", req.body);
-    const { game, players, gamers } = req.body;
-    await DbOps.addGame(game, players, gamers);
+    const { game, players, gamers, fullPartyOnly, remotePlay } = req.body;
+    await DbOps.addGame(game, players, gamers, fullPartyOnly, remotePlay);
     res.status(201).json({ message: 'Game added' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update a game
+app.put('/api/games/game/:id', async (req, res) => {
+  try {
+    console.log("Called update game", req.body);
+    const { id } = req.params;
+    const updates = req.body;
+    await DbOps.updateGame(id, updates);
+    res.json({ message: 'Game updated' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -123,6 +137,29 @@ app.get('/api/games/playable', async (req, res) => {
 		console.log("Called playable", playerList);
 		const items = await DbOps.getPlayableGames(playerList);
 		res.json({ items });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all unique gamers
+app.get('/api/games/gamers', async (req, res) => {
+  try {
+    console.log("Called get all gamers");
+    const gamers = await DbOps.getAllGamers();
+    res.json({ gamers });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get games by gamer
+app.get('/api/games/gamer/:gamerName', async (req, res) => {
+  try {
+    const { gamerName } = req.params;
+    console.log("Called get games by gamer", gamerName);
+    const items = await DbOps.getGamesByGamer(gamerName);
+    res.json({ items });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
