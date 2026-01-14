@@ -26,6 +26,10 @@ async function init() {
         connectString: process.env.ORACLE_CONNECT_STRING,
       });
 
+      console.log(process.env.ORACLE_PASSWORD)
+      console.log(process.env.ORACLE_CONNECT_STRING)
+      
+
       let connection;
       try {
         // get connection from the pool and use it
