@@ -19,7 +19,7 @@ const port = process.env.PORT || 3001;
 const dbConfig = {
 	user: 'ADMIN',
 	password: process.env.ORACLE_PASSWORD,
-	connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
+	connectString: process.env.ORACLE_CONNECT_STRING,
 
 	configDir: "/wallet"
 };
@@ -30,7 +30,7 @@ async function init() {
 		await oracledb.createPool({
 			user: 'ADMIN',
 			password: process.env.ORACLE_PASSWORD,
-			connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
+			connectString: process.env.ORACLE_CONNECT_STRING,
 		});
 
     let connection;
