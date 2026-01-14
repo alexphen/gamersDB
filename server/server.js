@@ -27,31 +27,7 @@ const dbConfig = {
 // OracleDB Initialization
 async function init() {
     try {
-		await oracledb.createPool({
-			user: 'ADMIN',
-			password: 'loonSQLpassword2',
-			connectString: "(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g1e4482f6c79339_gamersdb_medium.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))",
-		});
 
-        let connection;
-        try {
-            // get connection from the pool and use it
-            connection = await oracledb.getConnection(dbConfig);
-			console.log("Successfully connected")
-        } catch (err) {
-            console.log("err1");
-            throw (err);
-        } finally {
-            if (connection) {
-                try {
-                    await connection.close(); // Put the connection back in the pool
-                } catch (err) {
-                console.log("err2");
-                    throw (err);
-                }
-            } else {
-                console.log("no connection")
-            }
         }
 
     } catch (err) {
