@@ -14,17 +14,16 @@ class DbOps {
         const conn = await oracledb.getConnection();
         try {
             const result = await conn.execute(
-                `SELECT rowid, game, players, gamers FROM GAMES ORDER BY lower(game)`
-                // `SELECT rowid, game, players, gamers, fullPartyOnly, remotePlay FROM GAMES ORDER BY lower(game)`
+                `SELECT rowid, game, players, gamers, fullPartyOnly, remotePlay FROM GAMES ORDER BY lower(game)`
             );
             
             const items = result.rows.map(row => ({
                 rowid: row[0],
                 game: row[1],
                 players: row[2],
-                gamer_list: row[3] ? row[3].split(',').map(g => g.trim()).filter(g => g) : []//,
-                // fullPartyOnly: row[4] === 1 || row[4] === 'Y', // Handle Oracle boolean representation
-                // remotePlay: row[5] === 1 || row[5] === 'Y' // Handle Oracle boolean representation
+                gamer_list: row[3] ? row[3].split(',').map(g => g.trim()).filter(g => g) : [],
+                fullPartyOnly: row[4] === 1 || row[4] === 'Y', // Handle Oracle boolean representation
+                remotePlay: row[5] === 1 || row[5] === 'Y' // Handle Oracle boolean representation
             }));
 
             return items;
