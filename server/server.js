@@ -164,3 +164,13 @@ app.get('/api/games/gamer/:gamerName', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.post('/api/wake', async(req, res) => {
+    try {
+        str = "Waking Server";
+        console.log(str)
+        res.send(str)
+    } catch (error) {
+        console.log(error)
+    }
+});
