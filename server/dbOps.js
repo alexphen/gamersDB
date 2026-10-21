@@ -21,9 +21,9 @@ class DbOps {
                 rowid: row[0],
                 game: row[1],
                 players: row[2],
-                gamer_list: row[3] ? row[3].split(',').map(g => g.trim()).filter(g => g) : [],
-                fullPartyOnly: row[4] === 1 || row[4] === 'Y', // Handle Oracle boolean representation
-                remotePlay: row[5] === 1 || row[5] === 'Y' // Handle Oracle boolean representation
+                gamer_list: row[3] ? row[3].split(',').map(g => g.trim()).filter(g => g) : []//,
+                // fullPartyOnly: row[4] === 1 || row[4] === 'Y', // Handle Oracle boolean representation
+                // remotePlay: row[5] === 1 || row[5] === 'Y' // Handle Oracle boolean representation
             }));
 
             return items;
