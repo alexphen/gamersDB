@@ -21,7 +21,7 @@ const port = process.env.PORT || 3001;
 async function init() {
     try {
       await oracledb.createPool({
-        user: 'ADMIN',
+        user: process.env.ORACLE_USER,
         password: process.env.ORACLE_PASSWORD,
         connectString: process.env.ORACLE_CONNECT_STRING
       });
